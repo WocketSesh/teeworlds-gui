@@ -17,6 +17,7 @@
 #include "libsoup/soup-types.h"
 #include "libsoup/soup.h"
 #include "pango/pango-types.h"
+#include "sigc++/connection.h"
 #include <atomic>
 #include <memory>
 #include <vector>
@@ -41,7 +42,7 @@ class ServerPage : public BasePage
     bool         m_CancelRequested;
     bool         m_FirstOpened;
     const char  *m_SelectedServerIndex; // Not actually index but address, only consistent data
-    const char  *m_SelectedUserIndex;   // Not actually index but just user name
+    const char  *m_SelectedClientIndex; // Not actually index but just user name
 
     Gtk::Box m_ServerPageContainer; // VERT
 
@@ -67,6 +68,7 @@ class ServerPage : public BasePage
     Gtk::Label          m_SelectedServerName;            // PARENT:SELECTED
     Gtk::ScrolledWindow m_SelectedServerClientsScrolled; // PARENT:SELECTED
     Gtk::ListBox        m_SelectedServerClientsList;     // PARENT:SELECTED
+    Gtk::Button         m_SelectedClientView;            // PARENT:SELECTED
     Gtk::Box            m_ServerSettingsContainer;       // HORIZ PARENT:OUTER
     Gtk::Entry          m_SearchQuery;                   // PARENT:SETTINGS
     Gtk::Button         m_ToggleSort;                    // PARENT:SETTINGS
@@ -74,6 +76,7 @@ class ServerPage : public BasePage
 
     std::vector<Server *> m_Servers;
     Server               *m_SelectedServerPtr;
+    Client               *m_SelectedClientPtr;
 
     ServerPageBoxRow *ServerRowFromAddress(const char *address);
     ServerPageBoxRow *ClientRowFromName(const char *name);
@@ -82,6 +85,13 @@ class ServerPage : public BasePage
 
     void BackLoadingClicked();
     void BackClicked();
+
+    sigc::connection m_ViewClientConnection;
+    void             ViewClientClicked();
+
+    sigc::connection m_ConnectServerConnection;
+    void             ConnectServerClicked();
+
     void ServerListSelect(Gtk::ListBoxRow *row);
     void ClientListSelect(Gtk::ListBoxRow *row);
     bool FilterServerList(Gtk::ListBoxRow *row);
@@ -90,7 +100,6 @@ class ServerPage : public BasePage
     // Setup methods
     void Reset();
 
-    void        JsonToStruct(JsonParser *parser);
     bool        ShowPage(Gtk::Window *window) override;
     void        SetupLoading();
     void        SetupMain();

@@ -3,8 +3,10 @@
 #include "PageManager.h"
 #include "ServerStruct.h"
 #include "gdkmm/screen.h"
+#include "glibmm/main.h"
 #include "glibmm/spawn.h"
 #include "glibmm/threads.h"
+#include "gtkmm/application.h"
 #include "gtkmm/box.h"
 #include "gtkmm/cssprovider.h"
 #include "gtkmm/enums.h"
@@ -18,6 +20,8 @@
 #include "pangomm/context.h"
 #include "pangomm/layout.h"
 #include "sigc++/functors/mem_fun.h"
+#include <bits/chrono.h>
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <fmt/core.h>
@@ -32,7 +36,7 @@ ServerPage::ServerPage(PageManager *pageManager) : BasePage("servers", pageManag
     // TODO: maybe move these to reset, but remembering even across resets
     // what was selected is nice
     m_SelectedServerIndex = "";
-    m_SelectedUserIndex   = "";
+    m_SelectedClientIndex = "";
     m_Sort                = SortType::NONE;
     Reset();
 
@@ -54,6 +58,7 @@ void ServerPage::ClearServerList()
 
 void ServerPage::ClearServerClientList()
 {
+    m_SelectedClientPtr = nullptr;
     m_SelectedServerClientsList.foreach ([&](Gtk::Widget &child) { m_SelectedServerClientsList.remove(child); });
 }
 
@@ -61,6 +66,17 @@ void ServerPage::Reset()
 {
 
     m_FirstOpened = true;
+
+    if (m_ViewClientConnection.connected())
+    {
+        m_ViewClientConnection.disconnect();
+    }
+
+    if (m_ConnectServerConnection.connected())
+    {
+        m_ViewClientConnection.disconnect();
+    }
+
     ClearServerList();
     ClearServerClientList();
 
@@ -136,12 +152,8 @@ void ServerPage::ServerListSelect(Gtk::ListBoxRow *r)
     if (r == nullptr)
         return;
 
-    printf("selected inner\n");
-
     ServerPageBoxRow *row    = dynamic_cast<ServerPageBoxRow *>(r);
     Server           *server = ServerFromRow(row);
-
-    printf("got row\n");
 
     if (row == nullptr || server == nullptr ||
         (strcmp(m_SelectedServerIndex, server->addresses[0]) == 0) && !m_FirstOpened)
@@ -149,9 +161,9 @@ void ServerPage::ServerListSelect(Gtk::ListBoxRow *r)
 
     m_FirstOpened = false;
 
-    printf("%d\n", row->get_index());
-
-    m_SelectedServerPtr = server;
+    m_SelectedServerPtr   = server;
+    m_SelectedClientIndex = "";
+    m_SelectedClientPtr   = nullptr;
 
     if (strcmp(m_SelectedServerIndex, server->addresses[0]) != 0)
         m_SelectedServerIndex = "";
@@ -193,10 +205,11 @@ void ServerPage::ClientListSelect(Gtk::ListBoxRow *r)
     ServerPageBoxRow *row    = dynamic_cast<ServerPageBoxRow *>(r);
     Client           *client = ClientFromRow(row);
 
-    if (row == nullptr || client == nullptr || m_SelectedUserIndex == client->name)
+    if (row == nullptr || client == nullptr || m_SelectedClientIndex == client->name)
         return;
 
-    m_SelectedUserIndex = client->name;
+    m_SelectedClientPtr   = client;
+    m_SelectedClientIndex = client->name;
 }
 
 void ServerPage::SetupMain()
@@ -257,7 +270,13 @@ void ServerPage::SetupMain()
     m_SelectedServerClientsScrolled.add(m_SelectedServerClientsList);
 
     m_SelectedServer.pack_start(m_SelectedServerClientsScrolled, Gtk::PACK_EXPAND_WIDGET);
+
+    m_SelectedClientView.set_label("View Selected User");
+    m_SelectedClientView.signal_clicked().connect(sigc::mem_fun(*this, &ServerPage::ViewClientClicked));
+    m_SelectedServer.pack_start(m_SelectedClientView, Gtk::PACK_SHRINK);
+
     m_SelectedServer.show_all();
+
     /* Scrollable Server List */
 
     m_ScrollableServerList.set_policy(Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC);
@@ -281,22 +300,7 @@ void ServerPage::SetupMain()
                                                    : m_Sort == SortType::PLAYERS_ASCENDING ? "Ascending"
                                                                                            : "Descending"));
     m_ServerConnect.set_label("Connect To Server");
-    m_ServerConnect.signal_clicked().connect([&] {
-        if (m_SelectedServerPtr == nullptr)
-            return;
-
-        Glib::Threads::Thread::create([=]() {
-            const char *address = m_SelectedServerPtr->addresses[0];
-
-            std::string command = fmt::format("ez st \"connect {}\"", address);
-
-            const char *comm = command.c_str();
-
-            printf("Connecting to: %s\n", command.c_str());
-
-            system(comm);
-        });
-    });
+    m_ServerConnect.signal_clicked().connect(sigc::mem_fun(*this, &ServerPage::ConnectServerClicked));
 
     m_ToggleSort.signal_clicked().connect([&] {
         switch (m_Sort)
@@ -409,6 +413,61 @@ bool ServerPage::SortServerList(Gtk::ListBoxRow *row1, Gtk::ListBoxRow *row2)
     }
 }
 
+void ServerPage::ConnectServerClicked()
+{
+    if (m_SelectedServerPtr == nullptr)
+    {
+
+        if (m_ConnectServerConnection.connected())
+            m_ConnectServerConnection.disconnect();
+
+        m_ServerConnect.set_label("No Server Selected");
+
+        m_ConnectServerConnection = Glib::signal_timeout().connect(
+            [&]() {
+                m_ServerConnect.set_label("Connect To Server");
+                return false;
+            },
+            1000);
+
+        return;
+    }
+
+    Glib::Threads::Thread::create([=]() {
+        const char *address = m_SelectedServerPtr->addresses[0];
+
+        std::string command = fmt::format("ez st \"connect {}\"", address);
+
+        const char *comm = command.c_str();
+
+        printf("Connecting to: %s\n", comm);
+
+        system(comm);
+    });
+}
+
+void ServerPage::ViewClientClicked()
+{
+    if (m_SelectedClientPtr == nullptr)
+    {
+        if (m_ViewClientConnection.connected())
+            m_ViewClientConnection.disconnect();
+
+        m_SelectedClientView.set_label("No User Selected");
+
+        m_ViewClientConnection = Glib::signal_timeout().connect(
+            [&]() {
+                m_SelectedClientView.set_label("View Selected User");
+                return false;
+            },
+            1000);
+
+        return;
+    };
+
+    // TODO: actually implement this shit
+}
+
 // This will attempt to abort the sent request as well as change page
 void ServerPage::BackLoadingClicked()
 {
@@ -461,20 +520,22 @@ void ServerPage::PopulateMain()
         box->show();
 
         Gtk::Label *serverNameLabel = Gtk::make_managed<Gtk::Label>(AdjustTextFit(curr->info->name, 233));
-        serverNameLabel->set_max_width_chars(100);
-        serverNameLabel->set_ellipsize(Pango::ELLIPSIZE_END);
         serverNameLabel->set_xalign(0.0);
 
         box->pack_start(*serverNameLabel, Gtk::PACK_EXPAND_WIDGET);
         row->serverNameLabel = serverNameLabel;
 
         Gtk::Label *mapNameLabel = Gtk::make_managed<Gtk::Label>(AdjustTextFit(curr->info->map.name, 100));
-        mapNameLabel->set_max_width_chars(50);
-        mapNameLabel->set_ellipsize(Pango::ELLIPSIZE_END);
         mapNameLabel->set_xalign(0.0);
 
         box->pack_start(*mapNameLabel, Gtk::PACK_EXPAND_WIDGET);
         row->mapNameLabel = mapNameLabel;
+
+        Gtk::Label *playerCountLabel = Gtk::make_managed<Gtk::Label>(
+            fmt::format("{}/{}", curr->info->clients.size(), curr->info->max_players).c_str());
+        playerCountLabel->set_xalign(0.0);
+
+        box->pack_start(*playerCountLabel, Gtk::PACK_EXPAND_WIDGET);
 
         row->index = i;
 
@@ -503,9 +564,9 @@ void ServerPage::PopulateMain()
 
         printf("Selected server\n");
 
-        if (strcmp(m_SelectedUserIndex, "") != 0)
+        if (strcmp(m_SelectedClientIndex, "") != 0)
         {
-            auto clientToSelect = ClientRowFromName(m_SelectedUserIndex);
+            auto clientToSelect = ClientRowFromName(m_SelectedClientIndex);
 
             printf("Got client to select\n");
 
