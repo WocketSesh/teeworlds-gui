@@ -1,7 +1,7 @@
 #ifndef PAGE_MANAGER_H
 #define PAGE_MANAGER_H
 
-const int PAGES = 3;
+const int PAGES = 4;
 
 #include "BasePage.h"
 #include "HttpManager.h"
@@ -19,6 +19,8 @@ class PageManager
   public:
     PageManager(Gtk::Window *window);
 
+    Gtk::Window *m_Window;
+
     bool ChangePage(const char *name);
 
     bool RegisterPage(std::unique_ptr<BasePage> page);
@@ -34,11 +36,14 @@ class PageManager
     Glib::RefPtr<Gtk::StyleContext> m_Style;
 
     // Used to get a raw pointer of a page if needed
-    BasePage *GetRawPage(int index);
-    BasePage *GetRawPage(const char *name);
+    BasePage               *GetRawPage(int index);
+    BasePage               *GetRawPage(const char *name);
+    template <typename T> T GetCastedPage(const char *name)
+    {
+        return dynamic_cast<T>(GetRawPage(name));
+    }
 
   private:
-    Gtk::Window                           *m_Window;
     int                                    m_Active;
     int                                    m_RegisteredPages;
     std::vector<std::unique_ptr<BasePage>> m_Pages;

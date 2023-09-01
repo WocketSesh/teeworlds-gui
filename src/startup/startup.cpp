@@ -1,5 +1,6 @@
 
 #include "startup.h"
+#include "ClientProfile.h"
 #include "FriendsPage.h"
 #include "MainPage.h"
 #include "PageManager.h"
@@ -14,6 +15,7 @@ PageManager *setupPageManager(const char *defaultPage, Gtk::Window *window)
     pageManager->RegisterPage(std::make_unique<MainPage>(pageManager));
     pageManager->RegisterPage(std::make_unique<FriendsPage>(pageManager));
     pageManager->RegisterPage(std::make_unique<ServerPage>(pageManager));
+    pageManager->RegisterPage(std::make_unique<ClientProfile>(pageManager));
 
     pageManager->ChangePage(defaultPage);
 

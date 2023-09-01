@@ -1,10 +1,12 @@
 #include "HttpManager.h"
+#include "ClientProfile.h"
 #include "libsoup/soup-message.h"
 #include "libsoup/soup-method.h"
 #include "libsoup/soup-session.h"
 #include "libsoup/soup-types.h"
 #include <cstdio>
 #include <cstring>
+#include <fmt/core.h>
 #include <memory>
 #include <vector>
 
@@ -31,6 +33,170 @@ void HttpManager::GetServers(SoupSession *session, HttpManagerServerCallback cal
     soup_session_send_async(session, message, G_PRIORITY_DEFAULT, NULL, &HttpManager::GotServers, data);
 }
 
+void HttpManager::GetClientInfoFromName(const char *name, SoupSession *session, HttpManagerClientCallback callback,
+                                        gpointer calleeClass)
+{
+
+    ClientRequestData *data = new ClientRequestData{calleeClass, callback, name};
+
+    SoupMessage *message =
+        soup_message_new(SOUP_METHOD_GET, fmt::format("http://ddnet.org/players/?json2={}", name).c_str());
+
+    soup_session_send_async(session, message, G_PRIORITY_DEFAULT, NULL, &HttpManager::GotClient, data);
+    printf("sent request\n");
+};
+
+void HttpManager::GotClient(GObject *source, GAsyncResult *result, gpointer userData)
+{
+    printf("starting json parse\n");
+    ClientRequestData *data = static_cast<ClientRequestData *>(userData);
+
+    GError       *error  = NULL;
+    GInputStream *stream = soup_session_send_finish(SOUP_SESSION(source), result, &error);
+
+    if (error)
+    {
+        printf("Error gotclient\n");
+        g_error_free(error);
+        return;
+    }
+
+    JsonParser *parser = ToJson(stream);
+    ClientInfo *client = new ClientInfo;
+
+    JsonNode   *root    = json_parser_get_root(parser);
+    JsonObject *rootObj = json_node_get_object(root);
+
+    client->player = json_object_get_string_member_with_default(rootObj, "player", "undefined");
+
+    // TODO: idk if i like this style to separate up code blocks, maybe keep maybe dont
+
+    {
+        JsonObject *clientPoints = json_object_get_object_member(rootObj, "points");
+
+        client->points.total  = json_object_get_int_member_with_default(clientPoints, "total", -1);
+        client->points.points = json_object_get_int_member_with_default(clientPoints, "points", -1);
+        client->points.rank   = json_object_get_int_member_with_default(clientPoints, "rank", -1);
+    }
+
+    {
+        JsonObject *clientPointsLastMonth = json_object_get_object_member(rootObj, "points_last_month");
+
+        client->points_last_month.points = json_object_get_int_member_with_default(clientPointsLastMonth, "points", -1);
+        client->points_last_month.rank   = json_object_get_int_member_with_default(clientPointsLastMonth, "rank", -1);
+    }
+
+    {
+        JsonObject *clientPointsLastWeek = json_object_get_object_member(rootObj, "points_last_week");
+
+        client->points_last_week.points = json_object_get_int_member_with_default(clientPointsLastWeek, "points", -1);
+        client->points_last_week.rank   = json_object_get_int_member_with_default(clientPointsLastWeek, "rank", -1);
+    }
+
+    {
+        JsonObject *clientFirstFinish = json_object_get_object_member(rootObj, "first_finish");
+
+        client->first_finish.timestamp = json_object_get_int_member_with_default(clientFirstFinish, "timestamp", -1);
+        client->first_finish.map  = json_object_get_string_member_with_default(clientFirstFinish, "map", "undefined");
+        client->first_finish.time = json_object_get_int_member_with_default(clientFirstFinish, "time", -1);
+    }
+
+    JsonArray *clientLastFinishes = json_object_get_array_member(rootObj, "last_finishes");
+
+    for (int i = 0; i < json_array_get_length(clientLastFinishes); i++)
+    {
+        JsonObject *cur = json_array_get_object_element(clientLastFinishes, i);
+
+        LastFinishes lf;
+        lf.time      = json_object_get_int_member_with_default(cur, "time", -1);
+        lf.map       = json_object_get_string_member_with_default(cur, "map", "undefined");
+        lf.timestamp = json_object_get_int_member_with_default(cur, "timestamp", -1);
+        lf.type      = json_object_get_string_member_with_default(cur, "type", "undefined");
+        lf.country   = json_object_get_string_member_with_default(cur, "contry", "undefined");
+
+        client->last_finishes.push_back(lf);
+    }
+
+    JsonArray *favouritePartners = json_object_get_array_member(rootObj, "favoritePartners");
+
+    for (int i = 0; i < json_array_get_length(favouritePartners); i++)
+    {
+        JsonObject *cur = json_array_get_object_element(favouritePartners, i);
+
+        FavouritePartners fp;
+        fp.name     = json_object_get_string_member_with_default(cur, "name", "undefined");
+        fp.finishes = json_object_get_int_member_with_default(cur, "finishes", -1);
+
+        client->favorite_partners.push_back(fp);
+    }
+
+    JsonObject *types = json_object_get_object_member(rootObj, "types");
+
+    std::vector<const char *> typesVec = {"Novice",     "Moderate",   "Brutal",    "Insane",    "Dummy",
+                                          "DDmaX.Easy", "DDmaX.Next", "DDmaX.Pro", "DDmaX.Nut", "Oldschool",
+                                          "Solo",       "Race",       "Fun"};
+
+    printf("pre map parse\n");
+    {
+        JsonObject *typeObj = json_object_get_object_member(types, "Novice");
+
+        MapTypes mapType;
+        mapType.type = "Novice";
+
+        JsonObject *points = json_object_get_object_member(typeObj, "points");
+
+        mapType.points.points = json_object_get_int_member_with_default(points, "points", -1);
+        mapType.points.rank   = json_object_get_int_member_with_default(points, "rank", -1);
+        mapType.points.total  = json_object_get_int_member_with_default(points, "total", -1);
+
+        JsonObject *obj = json_object_get_object_member(typeObj, "maps");
+
+        mapType.maps = JsonToMapStruct(obj);
+
+        client->types.Novice = mapType;
+    }
+
+    printf("Got player info: %s\n", client->player);
+
+    (*data->callback)(client, data->calleeClass);
+}
+
+std::vector<MapInfo> HttpManager::JsonToMapStruct(JsonObject *object)
+{
+
+    std::vector<MapInfo> mapInfos;
+
+    GList *maps = json_object_get_members(object);
+
+    GList *iter;
+
+    int i = 0;
+
+    for (iter = maps; iter != NULL; iter = iter->next)
+    {
+        printf("%d\n", i);
+        const gchar *key = (const gchar *)iter->data;
+
+        JsonObject *mapInfoObj = json_object_get_object_member(object, key);
+
+        MapInfo mapInfo;
+
+        mapInfo.rank           = json_object_get_int_member_with_default(mapInfoObj, "rank", -1);
+        mapInfo.points         = json_object_get_int_member_with_default(mapInfoObj, "points", -1);
+        mapInfo.finishes       = json_object_get_int_member_with_default(mapInfoObj, "finishes", 0);
+        mapInfo.name           = key;
+        mapInfo.time           = json_object_get_int_member_with_default(mapInfoObj, "time", -1);
+        mapInfo.first_finish   = json_object_get_int_member_with_default(mapInfoObj, "first_finish", -1);
+        mapInfo.total_finishes = json_object_get_int_member_with_default(mapInfoObj, "total_finishes", -1);
+
+        mapInfos.push_back(mapInfo);
+
+        i++;
+    }
+
+    return mapInfos;
+}
+
 // this a fucking mess
 void HttpManager::GotServers(GObject *source, GAsyncResult *result, gpointer userData)
 {
@@ -41,6 +207,7 @@ void HttpManager::GotServers(GObject *source, GAsyncResult *result, gpointer use
 
     if (error)
     {
+        printf("Error gotservers\n");
         g_error_free(error);
         return;
     }

@@ -1,5 +1,6 @@
 #include "ServerPage.h"
 #include "BasePage.h"
+#include "ClientProfile.h"
 #include "PageManager.h"
 #include "ServerStruct.h"
 #include "gdkmm/screen.h"
@@ -30,9 +31,10 @@
 #include <memory>
 #include <string>
 
+// TODO: convert this to how ClientProfile handles m_Cancelled and both back buttons
+
 ServerPage::ServerPage(PageManager *pageManager) : BasePage("servers", pageManager)
 {
-
     // TODO: maybe move these to reset, but remembering even across resets
     // what was selected is nice
     m_SelectedServerIndex = "";
@@ -101,11 +103,6 @@ void ServerPage::Reset()
     m_ServerPageContainer.pack_start(m_LoadingContainer, Gtk::PACK_EXPAND_WIDGET);
     m_LoadingText.set_label("Fetching Server Data...");
 
-    auto layout = Pango::Layout::create(get_pango_context());
-    layout->set_text("Selected: None");
-    layout->set_width(300 * PANGO_SCALE);
-    layout->set_justify();
-    layout->set_ellipsize(Pango::EllipsizeMode::ELLIPSIZE_END);
     m_SelectedServerName.set_label(AdjustTextFit("Selected: None", 233));
 }
 
@@ -465,7 +462,10 @@ void ServerPage::ViewClientClicked()
         return;
     };
 
-    // TODO: actually implement this shit
+    ClientProfile *page = m_PageManager->GetCastedPage<ClientProfile *>("client-profile");
+
+    if (page)
+        page->ShowProfile(m_SelectedClientPtr->name, m_PageManager->m_Window, m_SelectedServerPtr);
 }
 
 // This will attempt to abort the sent request as well as change page
@@ -497,6 +497,10 @@ void ServerPage::FinishedLoading(std::vector<Server *> servers, gpointer calleeC
 
     if (p->m_CancelRequested)
     {
+        for (Server *s : servers)
+        {
+            delete s;
+        }
         return;
     }
 
@@ -669,6 +673,10 @@ bool ServerPage::ShowPage(Gtk::Window *window)
 
     window->add(m_Box);
     m_Box.show();
+
+    if (!m_Servers.empty())
+        return true;
+
     m_LoadingSpinner.start();
     printf("Showing %s\n", m_Name);
 
