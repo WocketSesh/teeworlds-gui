@@ -117,7 +117,7 @@ void HttpManager::GotClient(GObject *source, GAsyncResult *result, gpointer user
         client->last_finishes.push_back(lf);
     }
 
-    JsonArray *favouritePartners = json_object_get_array_member(rootObj, "favoritePartners");
+    JsonArray *favouritePartners = json_object_get_array_member(rootObj, "favorite_partners");
 
     for (int i = 0; i < json_array_get_length(favouritePartners); i++)
     {

@@ -236,14 +236,9 @@ void ServerPage::SetupMain()
 
     /* Title Separator */
 
-    // TODO: probably move this shit in some startup file
-    m_PageManager->m_Css->load_from_data("separator.trans-sep { background-color: rgba(0, 0, 0, 0); }");
-    m_PageManager->m_Style->add_provider_for_screen(Gdk::Screen::get_default(), m_PageManager->m_Css,
-                                                    GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-
     m_TitleSeparator.set_size_request(60, 1);
     m_TitleSeparator.set_halign(Gtk::ALIGN_END);
-    m_TitleSeparator.get_style_context()->add_class("trans-sep");
+    m_TitleSeparator.set_opacity(0);
 
     /* Title Box */
 

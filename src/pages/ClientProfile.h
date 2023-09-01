@@ -6,6 +6,7 @@
 #include "gtkmm/button.h"
 #include "gtkmm/grid.h"
 #include "gtkmm/scrolledwindow.h"
+#include "gtkmm/separator.h"
 #include "gtkmm/spinner.h"
 
 // Members are named to match their JSON counterpart
@@ -126,10 +127,19 @@ class ClientProfile : public BasePage
     Gtk::Box            m_ClientExtraInformationContainer;  // HORIZ PARENT:BASEINFO
     Gtk::ScrolledWindow m_ClientFavouriteScrolledContainer; // PARENT:EXTRAINFO
     Gtk::Grid           m_ClientFavouriteGridContainer;     // PARENT:SCROLLED
-    Gtk::ScrolledWindow m_ClientLatestScrolledContainer;    // PARENT:EXTRAINFO
-    Gtk::Grid           m_ClientLatestGridContainer;        // PARENT:SCROLLED
-    Gtk::ScrolledWindow m_ClientMapScrolledContainer;       // PARENT:INNER
-    Gtk::Grid           m_ClientMapsGridContainer;          // PARENT:SCROLLED
+
+    Gtk::Separator      m_ClientLatestSpacerOuter;       // PARENT:BASEINFO
+    Gtk::Separator      m_ClientLatestSpacerInner;       // PARENT:LATEST
+    Gtk::Box            m_ClientLatestContainer;         // VERT PARENT:EXTRAINFO
+    Gtk::Label          m_ClientLatestLabel;             // PARENT LATEST
+    Gtk::ScrolledWindow m_ClientLatestScrolledContainer; // PARENT:LATEST
+    Gtk::Grid           m_ClientLatestGridContainer;     // PARENT:LATEST
+
+    Gtk::Separator      m_ClientFavouriteSpacerInner; // PARENT:FAVOURITE
+    Gtk::Box            m_ClientFavouriteContainer;   // VERT PARENT:EXTRAINFO
+    Gtk::Label          m_ClientFavouriteLabel;       // PARENT FAVOURITE
+    Gtk::ScrolledWindow m_ClientMapScrolledContainer; // PARENT:INNER
+    Gtk::Grid           m_ClientMapsGridContainer;    // PARENT:SCROLLED
 
     Server     *m_CurrentServer;
     const char *m_CurrentUser;
