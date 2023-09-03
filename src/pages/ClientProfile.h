@@ -124,7 +124,7 @@ class ClientProfile : public BasePage
     Gtk::Label          m_ClientName;                       // PARENT:BASEINFO
     Gtk::Label          m_ClientPoints;                     // PARENT:BASEINFO
     Gtk::Label          m_ClientRank;                       // PARENT:BASEINFO
-    Gtk::Box            m_ClientExtraInformationContainer;  // HORIZ PARENT:BASEINFO
+    Gtk::Box            m_ClientExtraInformationContainer;  // VERT PARENT:BASEINFO
     Gtk::ScrolledWindow m_ClientFavouriteScrolledContainer; // PARENT:EXTRAINFO
     Gtk::Grid           m_ClientFavouriteGridContainer;     // PARENT:SCROLLED
 

@@ -51,7 +51,7 @@ void ClientProfile::SetupMain()
     m_ClientBaseInformationContainer.pack_start(m_ClientPoints, Gtk::PACK_SHRINK);
     m_ClientBaseInformationContainer.pack_start(m_ClientRank, Gtk::PACK_SHRINK);
 
-    m_ClientExtraInformationContainer.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
+    m_ClientExtraInformationContainer.set_orientation(Gtk::ORIENTATION_VERTICAL);
 
     {
 
@@ -75,7 +75,7 @@ void ClientProfile::SetupMain()
 
         m_ClientLatestScrolledContainer.add(m_ClientLatestGridContainer);
 
-        m_ClientExtraInformationContainer.pack_start(m_ClientLatestContainer, Gtk::PACK_SHRINK);
+        m_ClientExtraInformationContainer.pack_start(m_ClientLatestContainer, Gtk::PACK_EXPAND_WIDGET);
     }
 
     {
@@ -99,7 +99,7 @@ void ClientProfile::SetupMain()
 
         m_ClientFavouriteScrolledContainer.add(m_ClientFavouriteGridContainer);
 
-        m_ClientExtraInformationContainer.pack_start(m_ClientFavouriteContainer, Gtk::PACK_SHRINK);
+        m_ClientExtraInformationContainer.pack_start(m_ClientFavouriteContainer, Gtk::PACK_EXPAND_WIDGET);
     }
 
     m_ClientLatestSpacerOuter.set_size_request(-1, 50);
@@ -173,12 +173,16 @@ void ClientProfile::PopulateMain(ClientInfo *info)
     Gtk::Label *latestNameHeader = Gtk::make_managed<Gtk::Label>("Map");
     Gtk::Label *latestTimeHeader = Gtk::make_managed<Gtk::Label>("Time");
     Gtk::Label *latestSpacer     = Gtk::make_managed<Gtk::Label>();
+    Gtk::Label *latestTypeHeader = Gtk::make_managed<Gtk::Label>("Type");
 
     latestNameHeader->set_halign(Gtk::ALIGN_START);
     latestTimeHeader->set_halign(Gtk::ALIGN_START);
+    latestTypeHeader->set_halign(Gtk::ALIGN_START);
 
     m_ClientLatestGridContainer.attach(*latestNameHeader, 0, 0);
+    m_ClientLatestGridContainer.attach(*latestTypeHeader, 1, 0);
     m_ClientLatestGridContainer.attach(*latestTimeHeader, 2, 0);
+
     m_ClientLatestGridContainer.attach(*latestSpacer, 0, 1);
 
     for (int i = 0; i < m_Info->last_finishes.size(); i++)
@@ -186,11 +190,13 @@ void ClientProfile::PopulateMain(ClientInfo *info)
         auto        cur = m_Info->last_finishes[i];
         Gtk::Label *n   = Gtk::make_managed<Gtk::Label>(cur.map);
         Gtk::Label *t   = Gtk::make_managed<Gtk::Label>(FormatTime(cur.time));
+        Gtk::Label *ty  = Gtk::make_managed<Gtk::Label>(cur.type);
 
         n->set_halign(Gtk::ALIGN_START);
         t->set_halign(Gtk::ALIGN_START);
 
         m_ClientLatestGridContainer.attach(*n, 0, 2 + i);
+        m_ClientLatestGridContainer.attach(*ty, 1, 2 + i);
         m_ClientLatestGridContainer.attach(*t, 2, 2 + i);
     }
 

@@ -10,6 +10,7 @@
 
 PageManager *setupPageManager(const char *defaultPage, Gtk::Window *window)
 {
+    printf("starting up\n");
     PageManager *pageManager = new PageManager(window);
 
     pageManager->RegisterPage(std::make_unique<MainPage>(pageManager));

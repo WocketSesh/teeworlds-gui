@@ -132,11 +132,6 @@ void HttpManager::GotClient(GObject *source, GAsyncResult *result, gpointer user
 
     JsonObject *types = json_object_get_object_member(rootObj, "types");
 
-    std::vector<const char *> typesVec = {"Novice",     "Moderate",   "Brutal",    "Insane",    "Dummy",
-                                          "DDmaX.Easy", "DDmaX.Next", "DDmaX.Pro", "DDmaX.Nut", "Oldschool",
-                                          "Solo",       "Race",       "Fun"};
-
-    printf("pre map parse\n");
     {
         JsonObject *typeObj = json_object_get_object_member(types, "Novice");
 
@@ -156,7 +151,204 @@ void HttpManager::GotClient(GObject *source, GAsyncResult *result, gpointer user
         client->types.Novice = mapType;
     }
 
-    printf("Got player info: %s\n", client->player);
+    {
+        JsonObject *typeObj = json_object_get_object_member(types, "Moderate");
+
+        MapTypes mapType;
+        mapType.type = "Moderate";
+
+        JsonObject *points = json_object_get_object_member(typeObj, "points");
+
+        mapType.points.points = json_object_get_int_member_with_default(points, "points", -1);
+        mapType.points.rank   = json_object_get_int_member_with_default(points, "rank", -1);
+        mapType.points.total  = json_object_get_int_member_with_default(points, "total", -1);
+
+        JsonObject *obj = json_object_get_object_member(typeObj, "maps");
+
+        mapType.maps = JsonToMapStruct(obj);
+
+        client->types.Moderate = mapType;
+    }
+    {
+        JsonObject *typeObj = json_object_get_object_member(types, "Brutal");
+
+        MapTypes mapType;
+        mapType.type = "Brutal";
+
+        JsonObject *points = json_object_get_object_member(typeObj, "points");
+
+        mapType.points.points = json_object_get_int_member_with_default(points, "points", -1);
+        mapType.points.rank   = json_object_get_int_member_with_default(points, "rank", -1);
+        mapType.points.total  = json_object_get_int_member_with_default(points, "total", -1);
+
+        JsonObject *obj = json_object_get_object_member(typeObj, "maps");
+
+        mapType.maps = JsonToMapStruct(obj);
+
+        client->types.Brutal = mapType;
+    }
+    {
+        JsonObject *typeObj = json_object_get_object_member(types, "Insane");
+
+        MapTypes mapType;
+        mapType.type = "Insane";
+
+        JsonObject *points = json_object_get_object_member(typeObj, "points");
+
+        mapType.points.points = json_object_get_int_member_with_default(points, "points", -1);
+        mapType.points.rank   = json_object_get_int_member_with_default(points, "rank", -1);
+        mapType.points.total  = json_object_get_int_member_with_default(points, "total", -1);
+
+        JsonObject *obj = json_object_get_object_member(typeObj, "maps");
+
+        mapType.maps = JsonToMapStruct(obj);
+
+        client->types.Insane = mapType;
+    }
+    {
+        JsonObject *typeObj = json_object_get_object_member(types, "Dummy");
+
+        MapTypes mapType;
+        mapType.type = "Dummy";
+
+        JsonObject *points = json_object_get_object_member(typeObj, "points");
+
+        mapType.points.points = json_object_get_int_member_with_default(points, "points", -1);
+        mapType.points.rank   = json_object_get_int_member_with_default(points, "rank", -1);
+        mapType.points.total  = json_object_get_int_member_with_default(points, "total", -1);
+
+        JsonObject *obj = json_object_get_object_member(typeObj, "maps");
+
+        mapType.maps = JsonToMapStruct(obj);
+
+        client->types.Dummy = mapType;
+    }
+    {
+        JsonObject *typeObj = json_object_get_object_member(types, "Solo");
+
+        MapTypes mapType;
+        mapType.type = "Solo";
+
+        JsonObject *points = json_object_get_object_member(typeObj, "points");
+
+        mapType.points.points = json_object_get_int_member_with_default(points, "points", -1);
+        mapType.points.rank   = json_object_get_int_member_with_default(points, "rank", -1);
+        mapType.points.total  = json_object_get_int_member_with_default(points, "total", -1);
+
+        JsonObject *obj = json_object_get_object_member(typeObj, "maps");
+
+        mapType.maps = JsonToMapStruct(obj);
+
+        client->types.Solo = mapType;
+    }
+    {
+        JsonObject *typeObj = json_object_get_object_member(types, "Race");
+
+        MapTypes mapType;
+        mapType.type = "Race";
+
+        JsonObject *points = json_object_get_object_member(typeObj, "points");
+
+        mapType.points.points = json_object_get_int_member_with_default(points, "points", -1);
+        mapType.points.rank   = json_object_get_int_member_with_default(points, "rank", -1);
+        mapType.points.total  = json_object_get_int_member_with_default(points, "total", -1);
+
+        JsonObject *obj = json_object_get_object_member(typeObj, "maps");
+
+        mapType.maps = JsonToMapStruct(obj);
+
+        client->types.Race = mapType;
+    }
+    {
+        JsonObject *typeObj = json_object_get_object_member(types, "DDmaX.Easy");
+
+        MapTypes mapType;
+        mapType.type = "DDmaX.Easy";
+
+        JsonObject *points = json_object_get_object_member(typeObj, "points");
+
+        mapType.points.points = json_object_get_int_member_with_default(points, "points", -1);
+        mapType.points.rank   = json_object_get_int_member_with_default(points, "rank", -1);
+        mapType.points.total  = json_object_get_int_member_with_default(points, "total", -1);
+
+        JsonObject *obj = json_object_get_object_member(typeObj, "maps");
+
+        mapType.maps = JsonToMapStruct(obj);
+
+        client->types.DDmaX_Easy = mapType;
+    }
+    {
+        JsonObject *typeObj = json_object_get_object_member(types, "DDmaX.Next");
+
+        MapTypes mapType;
+        mapType.type = "DDmaX.Next";
+
+        JsonObject *points = json_object_get_object_member(typeObj, "points");
+
+        mapType.points.points = json_object_get_int_member_with_default(points, "points", -1);
+        mapType.points.rank   = json_object_get_int_member_with_default(points, "rank", -1);
+        mapType.points.total  = json_object_get_int_member_with_default(points, "total", -1);
+
+        JsonObject *obj = json_object_get_object_member(typeObj, "maps");
+
+        mapType.maps = JsonToMapStruct(obj);
+
+        client->types.DDmaX_Next = mapType;
+    }
+    {
+        JsonObject *typeObj = json_object_get_object_member(types, "DDmaX.Pro");
+
+        MapTypes mapType;
+        mapType.type = "DDmaX.Pro";
+
+        JsonObject *points = json_object_get_object_member(typeObj, "points");
+
+        mapType.points.points = json_object_get_int_member_with_default(points, "points", -1);
+        mapType.points.rank   = json_object_get_int_member_with_default(points, "rank", -1);
+        mapType.points.total  = json_object_get_int_member_with_default(points, "total", -1);
+
+        JsonObject *obj = json_object_get_object_member(typeObj, "maps");
+
+        mapType.maps = JsonToMapStruct(obj);
+
+        client->types.DDmaX_Pro = mapType;
+    }
+    {
+        JsonObject *typeObj = json_object_get_object_member(types, "DDmaX.Nut");
+
+        MapTypes mapType;
+        mapType.type = "DDmaX.Nut";
+
+        JsonObject *points = json_object_get_object_member(typeObj, "points");
+
+        mapType.points.points = json_object_get_int_member_with_default(points, "points", -1);
+        mapType.points.rank   = json_object_get_int_member_with_default(points, "rank", -1);
+        mapType.points.total  = json_object_get_int_member_with_default(points, "total", -1);
+
+        JsonObject *obj = json_object_get_object_member(typeObj, "maps");
+
+        mapType.maps = JsonToMapStruct(obj);
+
+        client->types.DDmaX_Nut = mapType;
+    }
+    {
+        JsonObject *typeObj = json_object_get_object_member(types, "Oldschool");
+
+        MapTypes mapType;
+        mapType.type = "Oldschool";
+
+        JsonObject *points = json_object_get_object_member(typeObj, "points");
+
+        mapType.points.points = json_object_get_int_member_with_default(points, "points", -1);
+        mapType.points.rank   = json_object_get_int_member_with_default(points, "rank", -1);
+        mapType.points.total  = json_object_get_int_member_with_default(points, "total", -1);
+
+        JsonObject *obj = json_object_get_object_member(typeObj, "maps");
+
+        mapType.maps = JsonToMapStruct(obj);
+
+        client->types.Oldschool = mapType;
+    }
 
     (*data->callback)(client, data->calleeClass);
 }

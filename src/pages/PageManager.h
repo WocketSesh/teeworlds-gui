@@ -19,7 +19,8 @@ class PageManager
   public:
     PageManager(Gtk::Window *window);
 
-    Gtk::Window *m_Window;
+    Gtk::Window                   *m_Window;
+    Glib::RefPtr<Gtk::Application> m_App;
 
     bool ChangePage(const char *name);
 
