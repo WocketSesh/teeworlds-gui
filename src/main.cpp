@@ -25,6 +25,7 @@ int HandleCommands(const Glib::RefPtr<Gio::ApplicationCommandLine> &cmds, PageMa
 
     bool          showServers   = false;
     Glib::ustring profileToView = "";
+    Glib::ustring queryToUse    = "";
 
     Glib::OptionContext context;
     Glib::OptionGroup   group("options", "Base Options");
@@ -41,8 +42,15 @@ int HandleCommands(const Glib::RefPtr<Gio::ApplicationCommandLine> &cmds, PageMa
     profile.set_description("Opens the GUI on the specified players profile");
     profile.set_arg_description("Players profile you wish to open");
 
+    Glib::OptionEntry query;
+    query.set_short_name('q');
+    query.set_long_name("query");
+    query.set_description("Sets the query (can only be used with server for now)");
+    query.set_arg_description("Query to use");
+
     group.add_entry(servers, showServers);
     group.add_entry(profile, profileToView);
+    group.add_entry(query, queryToUse);
 
     context.add_group(group);
 
@@ -50,7 +58,13 @@ int HandleCommands(const Glib::RefPtr<Gio::ApplicationCommandLine> &cmds, PageMa
 
     if (showServers)
     {
-        pageManager->ChangePage("servers");
+
+        ServerPage *serverPage = pageManager->GetCastedPage<ServerPage *>("servers");
+
+        if (serverPage != nullptr)
+        {
+            serverPage->ShowServers(queryToUse.c_str());
+        }
     }
     else if (!profileToView.empty())
     {

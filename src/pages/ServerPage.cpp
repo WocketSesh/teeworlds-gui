@@ -52,6 +52,14 @@ ServerPage::ServerPage(PageManager *pageManager) : BasePage("servers", pageManag
     m_Box.show();
 }
 
+void ServerPage::ShowServers(const char *query, ServerPage::SortType sort)
+{
+    m_Sort = sort;
+    m_SearchQuery.set_text(query);
+
+    m_PageManager->ChangePage("servers");
+}
+
 void ServerPage::ClearServerList()
 {
     m_SelectedServerPtr = nullptr;

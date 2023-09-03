@@ -35,6 +35,8 @@ class ServerPage : public BasePage
         PLAYERS_DESCENDING
     };
 
+    void ShowServers(const char *query = "", ServerPage::SortType sort = ServerPage::SortType::NONE);
+
   private:
     SortType m_Sort;
 
