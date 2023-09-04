@@ -102,7 +102,7 @@ class ClientProfile : public BasePage
 
     ClientInfo *m_Info;
     // This will not attempt to get a clients server itself if one is not provided
-    void ShowProfile(const char *name, Gtk::Window *window, Server *server);
+    void ShowProfile(const char *name, Server *server);
     bool ShowPage(Gtk::Window *window) override;
 
     static void FinishedLoading(ClientInfo *info, gpointer caleeClass);

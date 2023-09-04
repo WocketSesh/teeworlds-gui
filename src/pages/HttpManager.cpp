@@ -432,8 +432,7 @@ void HttpManager::GotServers(GObject *source, GAsyncResult *result, gpointer use
                 if (strcmp(data->query, json_array_get_string_element(addresses, i)) == 0)
                 {
                     inServer = true;
-                    i        = json_array_get_length(addresses);
-                    continue;
+                    break;
                 }
             }
 
@@ -444,8 +443,7 @@ void HttpManager::GotServers(GObject *source, GAsyncResult *result, gpointer use
                     if (strcmp(data->query, json_object_get_string_member(c, "name")) == 0)
                     {
                         inServer = true;
-                        i        = json_array_get_length(clientsArr);
-                        continue;
+                        break;
                     }
                 }
 

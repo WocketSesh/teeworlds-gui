@@ -152,7 +152,7 @@ void ClientProfile::BackClicked()
     m_PageManager->ChangePage(GetRefererName("main"));
 }
 
-void ClientProfile::ShowProfile(const char *name, Gtk::Window *window, Server *server)
+void ClientProfile::ShowProfile(const char *name, Server *server)
 {
     m_CurrentServer = server;
     m_CurrentUser   = name;
