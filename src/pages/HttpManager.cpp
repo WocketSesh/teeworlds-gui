@@ -130,12 +130,13 @@ void HttpManager::GotClient(GObject *source, GAsyncResult *result, gpointer user
         client->favorite_partners.push_back(fp);
     }
 
+    // TODO: convert this shit show into a loop similar to how ClientProfile is handled
     JsonObject *types = json_object_get_object_member(rootObj, "types");
 
     {
         JsonObject *typeObj = json_object_get_object_member(types, "Novice");
 
-        MapTypes mapType;
+        MapTypesStruct mapType;
         mapType.type = "Novice";
 
         JsonObject *points = json_object_get_object_member(typeObj, "points");
@@ -154,7 +155,7 @@ void HttpManager::GotClient(GObject *source, GAsyncResult *result, gpointer user
     {
         JsonObject *typeObj = json_object_get_object_member(types, "Moderate");
 
-        MapTypes mapType;
+        MapTypesStruct mapType;
         mapType.type = "Moderate";
 
         JsonObject *points = json_object_get_object_member(typeObj, "points");
@@ -172,7 +173,7 @@ void HttpManager::GotClient(GObject *source, GAsyncResult *result, gpointer user
     {
         JsonObject *typeObj = json_object_get_object_member(types, "Brutal");
 
-        MapTypes mapType;
+        MapTypesStruct mapType;
         mapType.type = "Brutal";
 
         JsonObject *points = json_object_get_object_member(typeObj, "points");
@@ -190,7 +191,7 @@ void HttpManager::GotClient(GObject *source, GAsyncResult *result, gpointer user
     {
         JsonObject *typeObj = json_object_get_object_member(types, "Insane");
 
-        MapTypes mapType;
+        MapTypesStruct mapType;
         mapType.type = "Insane";
 
         JsonObject *points = json_object_get_object_member(typeObj, "points");
@@ -208,7 +209,7 @@ void HttpManager::GotClient(GObject *source, GAsyncResult *result, gpointer user
     {
         JsonObject *typeObj = json_object_get_object_member(types, "Dummy");
 
-        MapTypes mapType;
+        MapTypesStruct mapType;
         mapType.type = "Dummy";
 
         JsonObject *points = json_object_get_object_member(typeObj, "points");
@@ -226,7 +227,7 @@ void HttpManager::GotClient(GObject *source, GAsyncResult *result, gpointer user
     {
         JsonObject *typeObj = json_object_get_object_member(types, "Solo");
 
-        MapTypes mapType;
+        MapTypesStruct mapType;
         mapType.type = "Solo";
 
         JsonObject *points = json_object_get_object_member(typeObj, "points");
@@ -244,7 +245,7 @@ void HttpManager::GotClient(GObject *source, GAsyncResult *result, gpointer user
     {
         JsonObject *typeObj = json_object_get_object_member(types, "Race");
 
-        MapTypes mapType;
+        MapTypesStruct mapType;
         mapType.type = "Race";
 
         JsonObject *points = json_object_get_object_member(typeObj, "points");
@@ -262,7 +263,7 @@ void HttpManager::GotClient(GObject *source, GAsyncResult *result, gpointer user
     {
         JsonObject *typeObj = json_object_get_object_member(types, "DDmaX.Easy");
 
-        MapTypes mapType;
+        MapTypesStruct mapType;
         mapType.type = "DDmaX.Easy";
 
         JsonObject *points = json_object_get_object_member(typeObj, "points");
@@ -280,7 +281,7 @@ void HttpManager::GotClient(GObject *source, GAsyncResult *result, gpointer user
     {
         JsonObject *typeObj = json_object_get_object_member(types, "DDmaX.Next");
 
-        MapTypes mapType;
+        MapTypesStruct mapType;
         mapType.type = "DDmaX.Next";
 
         JsonObject *points = json_object_get_object_member(typeObj, "points");
@@ -298,7 +299,7 @@ void HttpManager::GotClient(GObject *source, GAsyncResult *result, gpointer user
     {
         JsonObject *typeObj = json_object_get_object_member(types, "DDmaX.Pro");
 
-        MapTypes mapType;
+        MapTypesStruct mapType;
         mapType.type = "DDmaX.Pro";
 
         JsonObject *points = json_object_get_object_member(typeObj, "points");
@@ -316,7 +317,7 @@ void HttpManager::GotClient(GObject *source, GAsyncResult *result, gpointer user
     {
         JsonObject *typeObj = json_object_get_object_member(types, "DDmaX.Nut");
 
-        MapTypes mapType;
+        MapTypesStruct mapType;
         mapType.type = "DDmaX.Nut";
 
         JsonObject *points = json_object_get_object_member(typeObj, "points");
@@ -334,7 +335,7 @@ void HttpManager::GotClient(GObject *source, GAsyncResult *result, gpointer user
     {
         JsonObject *typeObj = json_object_get_object_member(types, "Oldschool");
 
-        MapTypes mapType;
+        MapTypesStruct mapType;
         mapType.type = "Oldschool";
 
         JsonObject *points = json_object_get_object_member(typeObj, "points");

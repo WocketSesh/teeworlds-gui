@@ -468,7 +468,7 @@ void ServerPage::ViewClientClicked()
     ClientProfile *page = m_PageManager->GetCastedPage<ClientProfile *>("client-profile");
 
     if (page)
-        page->ShowProfile(m_SelectedClientPtr->name, m_PageManager->m_Window, m_SelectedServerPtr);
+        page->ShowProfile(m_SelectedClientPtr->name, m_SelectedServerPtr);
 }
 
 // This will attempt to abort the sent request as well as change page

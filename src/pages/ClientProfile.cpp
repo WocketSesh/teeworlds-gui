@@ -4,7 +4,11 @@
 #include "gtkmm/box.h"
 #include "gtkmm/entry.h"
 #include "gtkmm/enums.h"
+#include "gtkmm/label.h"
 #include "gtkmm/object.h"
+#include "gtkmm/revealer.h"
+#include "gtkmm/scrolledwindow.h"
+#include "gtkmm/togglebutton.h"
 #include "utils.h"
 #include <fmt/core.h>
 
@@ -107,16 +111,110 @@ void ClientProfile::SetupMain()
     m_ClientBaseInformationContainer.pack_start(m_ClientLatestSpacerOuter, Gtk::PACK_SHRINK);
     m_ClientBaseInformationContainer.pack_start(m_ClientExtraInformationContainer, Gtk::PACK_EXPAND_WIDGET);
 
+    m_ClientMapContainer.set_orientation(Gtk::ORIENTATION_VERTICAL);
+    m_ClientScrolledMapContainer.set_policy(Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC);
+    m_ClientScrolledMapContainer.add(m_ClientMapContainer);
+
+    for (std::string t : m_MapTypes)
+    {
+
+        auto x = m_EnumMap.find(t);
+
+        MapTypes type;
+
+        if (x != m_EnumMap.end())
+        {
+            type = x->second;
+        }
+        else
+        {
+            printf("Failed to find matching enum for '%s'\n", t.c_str());
+            return;
+        }
+
+        MapContainers *mapContainer = new MapContainers;
+
+        mapContainer->m_ToggleButton   = Gtk::make_managed<Gtk::ToggleButton>();
+        mapContainer->m_OuterContainer = Gtk::make_managed<Gtk::Box>();
+        mapContainer->m_Scrolled       = Gtk::make_managed<Gtk::ScrolledWindow>();
+        mapContainer->m_InnerContainer = Gtk::make_managed<Gtk::Box>();
+        mapContainer->m_Revealer       = Gtk::make_managed<Gtk::Revealer>();
+        mapContainer->m_Grid           = Gtk::make_managed<Gtk::Grid>();
+        mapContainer->m_Type           = type;
+
+        mapContainer->m_Grid->set_column_homogeneous(true);
+
+        mapContainer->m_ToggleButton->set_label(fmt::format("Show {}", t));
+        mapContainer->m_Revealer->set_reveal_child(false);
+        mapContainer->m_Revealer->set_transition_duration(0);
+
+        mapContainer->m_InnerContainer->hide();
+        mapContainer->m_Revealer->add(*mapContainer->m_Grid);
+
+        // should probably just store both string and enum in the struct to make life easier
+        mapContainer->m_ToggleButton->signal_toggled().connect([type, t, this]() {
+            auto container = GetContainer(type);
+            if (container == nullptr)
+                return;
+
+            bool active = container->m_ToggleButton->get_active();
+            container->m_ToggleButton->set_label(fmt::format("{} {}", active ? "Hide" : "Show", t).c_str());
+            // I dont fucking know the revealer is kind of pointless
+            if (active)
+            {
+                container->m_Scrolled->set_no_show_all(false);
+                container->m_Scrolled->show_all();
+            }
+            else
+            {
+
+                container->m_Scrolled->set_no_show_all(false);
+                container->m_Scrolled->hide();
+            }
+            container->m_Revealer->set_reveal_child(active);
+        });
+
+        mapContainer->m_OuterContainer->set_orientation(Gtk::ORIENTATION_VERTICAL);
+
+        mapContainer->m_InnerContainer->set_orientation(Gtk::ORIENTATION_VERTICAL);
+
+        mapContainer->m_Scrolled->hide();
+        mapContainer->m_Scrolled->set_no_show_all();
+
+        mapContainer->m_OuterContainer->pack_start(*mapContainer->m_ToggleButton, Gtk::PACK_SHRINK);
+        mapContainer->m_OuterContainer->pack_start(*mapContainer->m_Scrolled, Gtk::PACK_SHRINK);
+
+        mapContainer->m_InnerContainer->pack_start(*mapContainer->m_Revealer, Gtk::PACK_SHRINK);
+        mapContainer->m_Scrolled->add(*mapContainer->m_InnerContainer);
+
+        mapContainer->m_Scrolled->set_min_content_height(300);
+        mapContainer->m_Scrolled->set_max_content_height(300);
+
+        m_ClientMapContainer.pack_start(*mapContainer->m_OuterContainer, Gtk::PACK_SHRINK);
+
+        m_MapContainers.push_back(mapContainer);
+    }
+
     m_ClientInnerContainer.pack_start(m_ClientBaseInformationContainer, Gtk::PACK_SHRINK);
 
-    m_ClientMapScrolledContainer.add(m_ClientMapsGridContainer);
-
-    m_ClientInnerContainer.pack_start(m_ClientMapScrolledContainer, Gtk::PACK_EXPAND_WIDGET);
+    m_ClientInnerContainer.pack_start(m_ClientScrolledMapContainer, Gtk::PACK_EXPAND_WIDGET);
+    // m_ClientMapScrolledContainer.add(m_ClientMapsGridContainer);
 
     m_ClientOuterContainer.pack_start(m_TitleContainer, Gtk::PACK_SHRINK);
     m_ClientOuterContainer.pack_start(m_ClientInnerContainer, Gtk::PACK_EXPAND_WIDGET);
 
     m_ClientOuterContainer.show_all();
+}
+
+ClientProfile::MapContainers *ClientProfile::GetContainer(MapTypes type)
+{
+    for (auto container : m_MapContainers)
+    {
+        if (container->m_Type == type)
+            return container;
+    }
+
+    return nullptr;
 }
 
 void ClientProfile::SetupLoading()
@@ -228,10 +326,102 @@ void ClientProfile::PopulateMain(ClientInfo *info)
 
     m_ClientLatestContainer.show_all();
     m_ClientFavouriteContainer.show_all();
-    m_ClientMapScrolledContainer.show_all();
 
     m_ClientMainContainer.remove(m_ClientLoadingContainer);
     m_ClientMainContainer.pack_start(m_ClientOuterContainer, Gtk::PACK_EXPAND_WIDGET);
+
+    for (auto container : m_MapContainers)
+    {
+        Gtk::Label *mapHeader = Gtk::make_managed<Gtk::Label>("Map");
+        mapHeader->set_halign(Gtk::ALIGN_START);
+        container->m_Grid->attach(*mapHeader, 0, 0);
+
+        Gtk::Label *timeHeader = Gtk::make_managed<Gtk::Label>("Time");
+        timeHeader->set_halign(Gtk::ALIGN_START);
+        container->m_Grid->attach(*timeHeader, 1, 0);
+
+        Gtk::Label *rankHeader = Gtk::make_managed<Gtk::Label>("Rank");
+        rankHeader->set_halign(Gtk::ALIGN_START);
+        container->m_Grid->attach(*rankHeader, 2, 0);
+
+        Gtk::Label *spacer = Gtk::make_managed<Gtk::Label>("");
+        container->m_Grid->attach(*spacer, 0, 1);
+
+        MapTypesStruct t;
+
+        switch (container->m_Type)
+        {
+        case MapTypes::NOVICE: {
+            t = info->types.Novice;
+            break;
+        }
+        case MapTypes::MODERATE: {
+            t = info->types.Moderate;
+            break;
+        }
+        case MapTypes::BRUTAL: {
+            t = info->types.Brutal;
+            break;
+        }
+        case MapTypes::INSANE: {
+            t = info->types.Insane;
+            break;
+        }
+        case MapTypes::FUN: {
+            t = info->types.Fun;
+            break;
+        }
+        case MapTypes::SOLO: {
+            t = info->types.Solo;
+            break;
+        }
+        case MapTypes::RACE: {
+            t = info->types.Race;
+            break;
+        }
+        case MapTypes::DUMMY: {
+            t = info->types.Race;
+            break;
+        }
+        case MapTypes::DDMAX_NEXT: {
+            t = info->types.DDmaX_Next;
+            break;
+        }
+        case MapTypes::DDMAX_EASY: {
+            t = info->types.DDmaX_Easy;
+            break;
+        }
+        case MapTypes::DDMAX_NUT: {
+            t = info->types.DDmaX_Nut;
+            break;
+        }
+        case MapTypes::DDMAX_PRO: {
+            t = info->types.DDmaX_Pro;
+            break;
+        }
+        default:
+            continue;
+        }
+
+        int row = 2;
+        for (auto m : t.maps)
+        {
+            Gtk::Label *mapName = Gtk::make_managed<Gtk::Label>(m.name);
+            Gtk::Label *mapTime = Gtk::make_managed<Gtk::Label>(m.time == -1 ? "-1" : FormatTime(m.time));
+            Gtk::Label *mapRank = Gtk::make_managed<Gtk::Label>(fmt::format("{}", m.rank));
+
+            mapName->set_halign(Gtk::ALIGN_START);
+            mapTime->set_halign(Gtk::ALIGN_START);
+            mapRank->set_halign(Gtk::ALIGN_START);
+
+            container->m_Grid->attach(*mapName, 0, row);
+            container->m_Grid->attach(*mapTime, 1, row);
+            container->m_Grid->attach(*mapRank, 2, row);
+
+            row++;
+        }
+    }
+
     printf("Got stats for: %s\nPoints: %d/%d\nRank:%d\n", info->player, info->points.points, info->points.total,
            info->points.rank);
 }
@@ -273,12 +463,16 @@ void ClientProfile::ClearLatestGrid()
 
 void ClientProfile::ClearFavouriteGrid()
 {
-    m_ClientMapsGridContainer.foreach ([&](Gtk::Widget &child) { m_ClientMapsGridContainer.remove(child); });
+
+    m_ClientFavouriteGridContainer.foreach ([&](Gtk::Widget &child) { m_ClientFavouriteGridContainer.remove(child); });
 }
 
 void ClientProfile::ClearMapGrid()
 {
-    m_ClientFavouriteGridContainer.foreach ([&](Gtk::Widget &child) { m_ClientFavouriteGridContainer.remove(child); });
+    for (auto container : m_MapContainers)
+    {
+        container->m_Grid->foreach ([&](Gtk::Widget &child) { container->m_Grid->remove(child); });
+    }
 }
 
 bool ClientProfile::ShowPage(Gtk::Window *window)

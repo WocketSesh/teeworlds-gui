@@ -71,7 +71,7 @@ int HandleCommands(const Glib::RefPtr<Gio::ApplicationCommandLine> &cmds, PageMa
         ClientProfile *clientProfile = pageManager->GetCastedPage<ClientProfile *>("client-profile");
 
         if (clientProfile != nullptr)
-            clientProfile->ShowProfile(profileToView.c_str(), pageManager->m_Window, nullptr);
+            clientProfile->ShowProfile(profileToView.c_str(), nullptr);
     }
 
     pageManager->m_App->activate();
