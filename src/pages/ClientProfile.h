@@ -207,6 +207,7 @@ class ClientProfile : public BasePage
 
     // Setup Methods
     void PopulateMain(ClientInfo *info);
+    void PopulateMapGrid(Gtk::Grid &grid, const MapTypesStruct &maps);
     void SetupLoading();
     void SetupMain();
     void Reset();

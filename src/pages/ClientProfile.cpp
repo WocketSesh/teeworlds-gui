@@ -11,6 +11,7 @@
 #include "gtkmm/togglebutton.h"
 #include "utils.h"
 #include <fmt/core.h>
+#include <unordered_map>
 
 ClientProfile::ClientProfile(PageManager *pageManager) : BasePage("client-profile", pageManager)
 {
@@ -268,60 +269,33 @@ void ClientProfile::PopulateMain(ClientInfo *info)
     m_ClientPoints.set_label(fmt::format("Points: {}/{}", info->points.points, info->points.total));
     m_ClientRank.set_label(fmt::format("Rank: {}", info->points.rank));
 
-    Gtk::Label *latestNameHeader = Gtk::make_managed<Gtk::Label>("Map");
-    Gtk::Label *latestTimeHeader = Gtk::make_managed<Gtk::Label>("Time");
-    Gtk::Label *latestSpacer     = Gtk::make_managed<Gtk::Label>();
-    Gtk::Label *latestTypeHeader = Gtk::make_managed<Gtk::Label>("Type");
+    m_ClientLatestGridContainer.attach(*CreateAndSetLabel("Map", Gtk::ALIGN_START), 0, 0);
+    m_ClientLatestGridContainer.attach(*CreateAndSetLabel("Type", Gtk::ALIGN_START), 1, 0);
+    m_ClientLatestGridContainer.attach(*CreateAndSetLabel("Time", Gtk::ALIGN_START), 2, 0);
 
-    latestNameHeader->set_halign(Gtk::ALIGN_START);
-    latestTimeHeader->set_halign(Gtk::ALIGN_START);
-    latestTypeHeader->set_halign(Gtk::ALIGN_START);
-
-    m_ClientLatestGridContainer.attach(*latestNameHeader, 0, 0);
-    m_ClientLatestGridContainer.attach(*latestTypeHeader, 1, 0);
-    m_ClientLatestGridContainer.attach(*latestTimeHeader, 2, 0);
-
-    m_ClientLatestGridContainer.attach(*latestSpacer, 0, 1);
+    m_ClientLatestGridContainer.attach(*CreateAndSetLabel("", Gtk::ALIGN_START), 0, 1);
 
     for (int i = 0; i < m_Info->last_finishes.size(); i++)
     {
-        auto        cur = m_Info->last_finishes[i];
-        Gtk::Label *n   = Gtk::make_managed<Gtk::Label>(cur.map);
-        Gtk::Label *t   = Gtk::make_managed<Gtk::Label>(FormatTime(cur.time));
-        Gtk::Label *ty  = Gtk::make_managed<Gtk::Label>(cur.type);
+        auto cur = m_Info->last_finishes[i];
 
-        n->set_halign(Gtk::ALIGN_START);
-        t->set_halign(Gtk::ALIGN_START);
-
-        m_ClientLatestGridContainer.attach(*n, 0, 2 + i);
-        m_ClientLatestGridContainer.attach(*ty, 1, 2 + i);
-        m_ClientLatestGridContainer.attach(*t, 2, 2 + i);
+        m_ClientLatestGridContainer.attach(*CreateAndSetLabel(cur.map, Gtk::ALIGN_START), 0, 2 + i);
+        m_ClientLatestGridContainer.attach(*CreateAndSetLabel(cur.type, Gtk::ALIGN_START), 1, 2 + i);
+        m_ClientLatestGridContainer.attach(*CreateAndSetLabel(FormatTime(cur.time).c_str(), Gtk::ALIGN_START), 2,
+                                           2 + i);
     }
 
-    Gtk::Label *favouriteNameHeader = Gtk::make_managed<Gtk::Label>("Partner");
-    Gtk::Label *favouriteTimeHeader = Gtk::make_managed<Gtk::Label>("Finishes");
-    Gtk::Label *favouriteSpacer     = Gtk::make_managed<Gtk::Label>();
-
-    favouriteNameHeader->set_halign(Gtk::ALIGN_START);
-    favouriteTimeHeader->set_halign(Gtk::ALIGN_START);
-
-    m_ClientFavouriteGridContainer.attach(*favouriteNameHeader, 0, 0);
-    m_ClientFavouriteGridContainer.attach(*favouriteTimeHeader, 2, 0);
-    m_ClientFavouriteGridContainer.attach(*favouriteSpacer, 0, 1);
+    m_ClientFavouriteGridContainer.attach(*CreateAndSetLabel("Partner", Gtk::ALIGN_START), 0, 0);
+    m_ClientFavouriteGridContainer.attach(*CreateAndSetLabel("Finishes", Gtk::ALIGN_START), 2, 0);
+    m_ClientFavouriteGridContainer.attach(*CreateAndSetLabel("", Gtk::ALIGN_START), 0, 1);
 
     for (int i = 0; i < m_Info->favorite_partners.size(); i++)
     {
-        auto        cur = m_Info->favorite_partners[i];
-        Gtk::Label *n   = Gtk::make_managed<Gtk::Label>(cur.name);
-        Gtk::Label *t   = Gtk::make_managed<Gtk::Label>(std::to_string(cur.finishes));
+        auto cur = m_Info->favorite_partners[i];
 
-        printf("%s %d\n", cur.name, cur.finishes);
-
-        n->set_halign(Gtk::ALIGN_START);
-        t->set_halign(Gtk::ALIGN_START);
-
-        m_ClientFavouriteGridContainer.attach(*n, 0, 2 + i);
-        m_ClientFavouriteGridContainer.attach(*t, 2, 2 + i);
+        m_ClientFavouriteGridContainer.attach(*CreateAndSetLabel(cur.name, Gtk::ALIGN_START), 0, 2 + i);
+        m_ClientFavouriteGridContainer.attach(
+            *CreateAndSetLabel(std::to_string(cur.finishes).c_str(), Gtk::ALIGN_START), 2, 2 + i);
     }
 
     m_ClientLatestContainer.show_all();
@@ -330,101 +304,59 @@ void ClientProfile::PopulateMain(ClientInfo *info)
     m_ClientMainContainer.remove(m_ClientLoadingContainer);
     m_ClientMainContainer.pack_start(m_ClientOuterContainer, Gtk::PACK_EXPAND_WIDGET);
 
+    std::unordered_map<MapTypes, MapTypesStruct *> mapStructs = {
+        {MapTypes::NOVICE, &info->types.Novice},
+        {MapTypes::MODERATE, &info->types.Moderate},
+        {MapTypes::BRUTAL, &info->types.Brutal},
+        {MapTypes::INSANE, &info->types.Insane},
+        {MapTypes::FUN, &info->types.Fun},
+        {MapTypes::SOLO, &info->types.Solo},
+        {MapTypes::RACE, &info->types.Race},
+        {MapTypes::DUMMY, &info->types.Race},
+        {MapTypes::DDMAX_NEXT, &info->types.DDmaX_Next},
+        {MapTypes::DDMAX_EASY, &info->types.DDmaX_Easy},
+        {MapTypes::DDMAX_NUT, &info->types.DDmaX_Nut},
+        {MapTypes::DDMAX_PRO, &info->types.DDmaX_Pro},
+    };
+
     for (auto container : m_MapContainers)
     {
-        Gtk::Label *mapHeader = Gtk::make_managed<Gtk::Label>("Map");
-        mapHeader->set_halign(Gtk::ALIGN_START);
-        container->m_Grid->attach(*mapHeader, 0, 0);
-
-        Gtk::Label *timeHeader = Gtk::make_managed<Gtk::Label>("Time");
-        timeHeader->set_halign(Gtk::ALIGN_START);
-        container->m_Grid->attach(*timeHeader, 1, 0);
-
-        Gtk::Label *rankHeader = Gtk::make_managed<Gtk::Label>("Rank");
-        rankHeader->set_halign(Gtk::ALIGN_START);
-        container->m_Grid->attach(*rankHeader, 2, 0);
-
-        Gtk::Label *spacer = Gtk::make_managed<Gtk::Label>("");
-        container->m_Grid->attach(*spacer, 0, 1);
-
         MapTypesStruct t;
 
-        switch (container->m_Type)
+        auto x = mapStructs.find(container->m_Type);
+
+        if (x != mapStructs.end())
         {
-        case MapTypes::NOVICE: {
-            t = info->types.Novice;
-            break;
+            t = *(x->second);
         }
-        case MapTypes::MODERATE: {
-            t = info->types.Moderate;
-            break;
-        }
-        case MapTypes::BRUTAL: {
-            t = info->types.Brutal;
-            break;
-        }
-        case MapTypes::INSANE: {
-            t = info->types.Insane;
-            break;
-        }
-        case MapTypes::FUN: {
-            t = info->types.Fun;
-            break;
-        }
-        case MapTypes::SOLO: {
-            t = info->types.Solo;
-            break;
-        }
-        case MapTypes::RACE: {
-            t = info->types.Race;
-            break;
-        }
-        case MapTypes::DUMMY: {
-            t = info->types.Race;
-            break;
-        }
-        case MapTypes::DDMAX_NEXT: {
-            t = info->types.DDmaX_Next;
-            break;
-        }
-        case MapTypes::DDMAX_EASY: {
-            t = info->types.DDmaX_Easy;
-            break;
-        }
-        case MapTypes::DDMAX_NUT: {
-            t = info->types.DDmaX_Nut;
-            break;
-        }
-        case MapTypes::DDMAX_PRO: {
-            t = info->types.DDmaX_Pro;
-            break;
-        }
-        default:
+        else
             continue;
-        }
 
-        int row = 2;
-        for (auto m : t.maps)
-        {
-            Gtk::Label *mapName = Gtk::make_managed<Gtk::Label>(m.name);
-            Gtk::Label *mapTime = Gtk::make_managed<Gtk::Label>(m.time == -1 ? "-1" : FormatTime(m.time));
-            Gtk::Label *mapRank = Gtk::make_managed<Gtk::Label>(fmt::format("{}", m.rank));
+        container->m_Grid->attach(*CreateAndSetLabel("Map", Gtk::ALIGN_START), 0, 0);
+        container->m_Grid->attach(*CreateAndSetLabel("Time", Gtk::ALIGN_START), 1, 0);
+        container->m_Grid->attach(*CreateAndSetLabel("Rank", Gtk::ALIGN_START), 2, 0);
+        container->m_Grid->attach(*CreateAndSetLabel("", Gtk::ALIGN_START), 0, 1);
 
-            mapName->set_halign(Gtk::ALIGN_START);
-            mapTime->set_halign(Gtk::ALIGN_START);
-            mapRank->set_halign(Gtk::ALIGN_START);
-
-            container->m_Grid->attach(*mapName, 0, row);
-            container->m_Grid->attach(*mapTime, 1, row);
-            container->m_Grid->attach(*mapRank, 2, row);
-
-            row++;
-        }
+        PopulateMapGrid(*container->m_Grid, t);
     }
 
     printf("Got stats for: %s\nPoints: %d/%d\nRank:%d\n", info->player, info->points.points, info->points.total,
            info->points.rank);
 }
+
+void ClientProfile::PopulateMapGrid(Gtk::Grid &grid, const MapTypesStruct &maps)
+{
+    int row = 2;
+    for (auto m : maps.maps)
+    {
+        grid.attach(*CreateAndSetLabel(m.name, Gtk::ALIGN_START), 0, row);
+        grid.attach(*CreateAndSetLabel(m.time == -1 ? "Unfinished" : FormatTime(m.time).c_str(), Gtk::ALIGN_START), 1,
+                    row);
+        grid.attach(*CreateAndSetLabel(m.rank == -1 ? "Unranked" : std::to_string(m.rank).c_str(), Gtk::ALIGN_START), 2,
+                    row);
+        row++;
+    }
+};
 
 void ClientProfile::FinishedLoading(ClientInfo *info, gpointer calleeClass)
 {

@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "gtkmm/label.h"
 #include <fmt/core.h>
 
 std::string FormatTime(int seconds)
@@ -9,3 +10,10 @@ std::string FormatTime(int seconds)
 
     return fmt::format("{:02d}:{:02d}:{:02d}", hours, minutes, secs);
 }
+
+Gtk::Label *CreateAndSetLabel(const char *text, Gtk::Align alignment)
+{
+    Gtk::Label *l = Gtk::make_managed<Gtk::Label>(text);
+    l->set_halign(alignment);
+    return l;
+};
