@@ -7,6 +7,7 @@ const int PAGES = 4;
 #include "HttpManager.h"
 #include "MainPage.h"
 #include "ServerPage.h"
+#include "SettingsManager.h"
 #include "gtkmm/cssprovider.h"
 #include "gtkmm/window.h"
 #include "libsoup/soup.h"
@@ -29,9 +30,10 @@ class PageManager
     int IndexOf(const char *name);
     int IndexOf(BasePage *page);
 
-    SoupSession *m_Soup;
-    GMainLoop   *m_Loop;
-    HttpManager *m_HttpManager;
+    SoupSession     *m_Soup;
+    SettingsManager *m_Settings;
+    GMainLoop       *m_Loop;
+    HttpManager     *m_HttpManager;
 
     Glib::RefPtr<Gtk::CssProvider>  m_Css;
     Glib::RefPtr<Gtk::StyleContext> m_Style;

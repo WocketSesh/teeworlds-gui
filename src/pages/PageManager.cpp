@@ -2,6 +2,7 @@
 #include "PageManager.h"
 #include "BasePage.h"
 #include "HttpManager.h"
+#include "SettingsManager.h"
 #include "gtkmm/stylecontext.h"
 #include "gtkmm/styleprovider.h"
 #include "gtkmm/window.h"
@@ -21,6 +22,7 @@ PageManager::PageManager(Gtk::Window *window) : m_Pages(5)
     m_Soup            = soup_session_new();
     m_Loop            = g_main_loop_new(NULL, false);
     m_HttpManager     = new HttpManager();
+    m_Settings        = new SettingsManager();
 
     // g_main_loop_run(m_Loop);
 }

@@ -37,9 +37,21 @@ ServerPage::ServerPage(PageManager *pageManager) : BasePage("servers", pageManag
 {
     // TODO: maybe move these to reset, but remembering even across resets
     // what was selected is nice
-    m_SelectedServerIndex = "";
-    m_SelectedClientIndex = "";
-    m_Sort                = SortType::NONE;
+    // TODO: change all these const char * shit ass to std::string
+    bool saveSettings = m_PageManager->m_Settings->m_Data.saveServerSettings;
+
+    m_SelectedServerIndex =
+        saveSettings ? m_PageManager->m_Settings->m_Data.serverSettings.selectedAddress.c_str() : "";
+    m_SelectedClientIndex = saveSettings ? m_PageManager->m_Settings->m_Data.serverSettings.selectedUser.c_str() : "";
+    m_Sort                = saveSettings ? m_PageManager->m_Settings->m_Data.serverSettings.sortType : SortType::NONE;
+
+    printf("sort: '%s'\n", std::to_string(m_Sort).c_str());
+    printf("selected s: '%s'\n", m_SelectedServerIndex);
+    printf("selected c: '%s'\n", m_SelectedClientIndex);
+    printf("query: %s\n", m_PageManager->m_Settings->m_Data.serverSettings.serverQuery.c_str());
+
+    if (saveSettings)
+        m_SearchQuery.set_text(m_PageManager->m_Settings->m_Data.serverSettings.serverQuery.c_str());
     Reset();
 
     m_Box.set_orientation(Gtk::ORIENTATION_VERTICAL);
@@ -495,6 +507,7 @@ void ServerPage::BackClicked()
 
 void ServerPage::FinishedLoading(std::vector<Server *> servers, gpointer calleeClass)
 {
+    printf("finished loading?\n");
 
     ServerPage *p = static_cast<ServerPage *>(calleeClass);
 

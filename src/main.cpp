@@ -9,6 +9,8 @@
 #include "pages/MainPage.h"
 #include "pages/PageManager.h"
 #include "startup/startup.h"
+#include <cstdlib>
+#include <filesystem>
 #include <fmt/format.h>
 #include <gtkmm-3.0/gtkmm.h>
 #include <gtkmm-3.0/gtkmm/application.h>
@@ -88,6 +90,9 @@ int main(int argc, char *argv[])
     PageManager *pageManager = setupPageManager("main", &window);
 
     pageManager->m_App = app;
+
+    window.signal_delete_event().connect(
+        [&pageManager](GdkEventAny *event) { return pageManager->m_Settings->WriteFile(); });
 
     app->signal_command_line().connect(sigc::bind(sigc::ptr_fun(HandleCommands), pageManager), false);
 
