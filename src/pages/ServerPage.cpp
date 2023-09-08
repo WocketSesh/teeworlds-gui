@@ -3,6 +3,7 @@
 #include "ClientProfile.h"
 #include "PageManager.h"
 #include "ServerStruct.h"
+#include "gdkmm/rgba.h"
 #include "gdkmm/screen.h"
 #include "glibmm/main.h"
 #include "glibmm/spawn.h"
@@ -21,6 +22,7 @@
 #include "pangomm/context.h"
 #include "pangomm/layout.h"
 #include "sigc++/functors/mem_fun.h"
+#include "utils.h"
 #include <bits/chrono.h>
 #include <chrono>
 #include <cstdlib>
@@ -43,7 +45,7 @@ ServerPage::ServerPage(PageManager *pageManager) : BasePage("servers", pageManag
     m_SelectedServerIndex =
         saveSettings ? m_PageManager->m_Settings->m_Data.serverSettings.selectedAddress.c_str() : "";
     m_SelectedClientIndex = saveSettings ? m_PageManager->m_Settings->m_Data.serverSettings.selectedUser.c_str() : "";
-    m_Sort                = saveSettings ? m_PageManager->m_Settings->m_Data.serverSettings.sortType : SortType::NONE;
+    m_Sort = saveSettings ? m_PageManager->m_Settings->m_Data.serverSettings.sortType : Server::SortType::NONE;
 
     printf("sort: '%s'\n", std::to_string(m_Sort).c_str());
     printf("selected s: '%s'\n", m_SelectedServerIndex);
@@ -64,7 +66,7 @@ ServerPage::ServerPage(PageManager *pageManager) : BasePage("servers", pageManag
     m_Box.show();
 }
 
-void ServerPage::ShowServers(const char *query, ServerPage::SortType sort)
+void ServerPage::ShowServers(const char *query, Server::SortType sort)
 {
     m_Sort = sort;
     m_SearchQuery.set_text(query);
@@ -200,6 +202,12 @@ void ServerPage::ServerListSelect(Gtk::ListBoxRow *r)
         ServerPageBoxRow *row   = Gtk::make_managed<ServerPageBoxRow>();
         Gtk::Label       *label = Gtk::make_managed<Gtk::Label>();
 
+        Gdk::RGBA green;
+        green.set_rgba(0.0, 0.5, 0.0, 1.0);
+
+        if (m_PageManager->m_Settings->IsFriend(clients[i]->name) > -1)
+            label->override_background_color(green);
+
         row->index = i;
 
         clients[i]->row = row;
@@ -308,27 +316,27 @@ void ServerPage::SetupMain()
 
     m_ServerSettingsContainer.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
     m_SearchQuery.signal_changed().connect([&] { m_ServerList.invalidate_filter(); });
-    m_ToggleSort.set_label(fmt::format("Sort: {}", m_Sort == SortType::NONE                ? "None"
-                                                   : m_Sort == SortType::PLAYERS_ASCENDING ? "Ascending"
-                                                                                           : "Descending"));
+    m_ToggleSort.set_label(fmt::format("Sort: {}", m_Sort == Server::SortType::NONE                ? "None"
+                                                   : m_Sort == Server::SortType::PLAYERS_ASCENDING ? "Ascending"
+                                                                                                   : "Descending"));
     m_ServerConnect.set_label("Connect To Server");
     m_ServerConnect.signal_clicked().connect(sigc::mem_fun(*this, &ServerPage::ConnectServerClicked));
 
     m_ToggleSort.signal_clicked().connect([&] {
         switch (m_Sort)
         {
-        case SortType::NONE: {
-            m_Sort = SortType::PLAYERS_ASCENDING;
+        case Server::SortType::NONE: {
+            m_Sort = Server::SortType::PLAYERS_ASCENDING;
             m_ToggleSort.set_label("Sort: Ascending");
             break;
         }
-        case SortType::PLAYERS_ASCENDING: {
-            m_Sort = SortType::PLAYERS_DESCENDING;
+        case Server::SortType::PLAYERS_ASCENDING: {
+            m_Sort = Server::SortType::PLAYERS_DESCENDING;
             m_ToggleSort.set_label("Sort: Descending");
             break;
         }
-        case SortType::PLAYERS_DESCENDING: {
-            m_Sort = SortType::NONE;
+        case Server::SortType::PLAYERS_DESCENDING: {
+            m_Sort = Server::SortType::NONE;
             m_ToggleSort.set_label("Sort: None");
             break;
         }
@@ -416,11 +424,11 @@ bool ServerPage::SortServerList(Gtk::ListBoxRow *row1, Gtk::ListBoxRow *row2)
 
     switch (m_Sort)
     {
-    case SortType::NONE:
+    case Server::SortType::NONE:
         return false;
-    case SortType::PLAYERS_ASCENDING:
+    case Server::SortType::PLAYERS_ASCENDING:
         return s1->info->clients.size() > s2->info->clients.size();
-    case SortType::PLAYERS_DESCENDING:
+    case Server::SortType::PLAYERS_DESCENDING:
         return s2->info->clients.size() > s1->info->clients.size();
     }
 }
@@ -527,12 +535,15 @@ void ServerPage::FinishedLoading(std::vector<Server *> servers, gpointer calleeC
 void ServerPage::PopulateMain()
 {
 
+    printf("populating main\n");
     for (int i = 0; i < m_Servers.size(); i++)
     {
         Server *curr = m_Servers[i];
 
         if (curr == nullptr)
             continue;
+
+        curr->CalculateFilterType(m_PageManager->m_Settings);
 
         ServerPageBoxRow *row = Gtk::make_managed<ServerPageBoxRow>();
         Gtk::Box         *box = Gtk::make_managed<Gtk::Box>();
@@ -552,10 +563,19 @@ void ServerPage::PopulateMain()
         row->mapNameLabel = mapNameLabel;
 
         Gtk::Label *playerCountLabel = Gtk::make_managed<Gtk::Label>(
-            fmt::format("{}/{}", curr->info->clients.size(), curr->info->max_players).c_str());
+            AdjustTextFit(fmt::format("{}/{}", curr->info->clients.size(), curr->info->max_players).c_str(), 50)
+                .c_str());
         playerCountLabel->set_xalign(0.0);
 
         box->pack_start(*playerCountLabel, Gtk::PACK_EXPAND_WIDGET);
+
+        box->pack_start(*CreateAndSetLabel(
+            AdjustTextFit(fmt::format("{} {}", curr->m_Favourite ? "★" : " ",
+                                      curr->m_FriendCount > 0 ? "♥" + std::to_string(curr->m_FriendCount) : "")
+                              .c_str(),
+                          50)
+                .c_str(),
+            Gtk::ALIGN_START));
 
         row->index = i;
 
@@ -582,20 +602,14 @@ void ServerPage::PopulateMain()
             return;
         m_ServerList.select_row(*toSelect);
 
-        printf("Selected server\n");
-
         if (strcmp(m_SelectedClientIndex, "") != 0)
         {
             auto clientToSelect = ClientRowFromName(m_SelectedClientIndex);
-
-            printf("Got client to select\n");
 
             if (clientToSelect == nullptr)
                 return;
 
             m_SelectedServerClientsList.select_row(*clientToSelect);
-
-            printf("selected client\n");
         }
     }
 }

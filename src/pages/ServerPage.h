@@ -28,17 +28,10 @@ class ServerPage : public BasePage
   public:
     ServerPage(PageManager *pageManager);
 
-    enum SortType
-    {
-        NONE,
-        PLAYERS_ASCENDING,
-        PLAYERS_DESCENDING
-    };
-
-    void ShowServers(const char *query = "", ServerPage::SortType sort = ServerPage::SortType::NONE);
+    void ShowServers(const char *query = "", Server::SortType sort = Server::SortType::NONE);
 
   private:
-    SortType m_Sort;
+    Server::SortType m_Sort;
 
     SoupMessage *m_Msg;
     bool         m_CancelRequested;

@@ -1,4 +1,5 @@
 #include "SettingsManager.h"
+#include "ServerStruct.h"
 #include <cstddef>
 #include <cstring>
 #include <filesystem>
@@ -13,12 +14,23 @@ SettingsManager::SettingsManager()
 
 void SettingsManager::DefaultSettings()
 {
-    m_Data.serverSettings.sortType        = ServerPage::SortType::NONE;
+    m_Data.serverSettings.sortType        = Server::NONE;
     m_Data.serverSettings.serverQuery     = "";
     m_Data.serverSettings.selectedUser    = "";
     m_Data.serverSettings.selectedAddress = "";
 
     m_Data.saveServerSettings = false;
+}
+
+bool SettingsManager::IsFavourite(std::string address)
+{
+    for (std::string a : m_Data.serverSettings.favouriteServers)
+    {
+        if (a == address)
+            return true;
+    }
+
+    return false;
 }
 
 void SettingsManager::Init(std::string filePath)

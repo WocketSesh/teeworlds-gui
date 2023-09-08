@@ -7,6 +7,9 @@
 #include <memory>
 #include <vector>
 
+// Annoying but circular dependancy shit ass
+class SettingsManager;
+
 class ServerPageBoxRow : public Gtk::ListBoxRow
 {
   public:
@@ -37,6 +40,7 @@ class ServerInfo
 
     gint64      max_players;
     const char *name;
+    std::string game_type;
     struct
     {
         const char *name;
@@ -48,6 +52,32 @@ class Server
 {
   public:
     Server();
+
+    enum SortType
+    {
+        NONE,
+        PLAYERS_ASCENDING,
+        PLAYERS_DESCENDING
+    };
+
+    enum ServerFilterTypes
+    {
+        ALL       = 1 << 0,
+        GORES     = 1 << 1,
+        DDRACE    = 1 << 2,
+        FAVOURITE = 1 << 3,
+        FRIENDS   = 1 << 4,
+        OTHER     = 1 << 5
+    };
+
+    int  m_FilterType;
+    bool m_Favourite;
+    int  m_FriendCount;
+
+    bool ShouldShow(std::string strFilter = "", ServerFilterTypes filterType = ALL);
+    void CalculateFilterType(SettingsManager *settingsManager);
+    void CalculateFriendCount(SettingsManager &settingsManager);
+
     std::vector<const char *> addresses;
     const char               *location;
     ServerInfo               *info;

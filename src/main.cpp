@@ -1,5 +1,6 @@
 #include "gtkmm/main.h"
 #include "FriendsPage.h"
+#include "ServerPage.h"
 #include "giomm/application.h"
 #include "glibmm/optioncontext.h"
 #include "glibmm/optionentry.h"
@@ -20,7 +21,6 @@
 
 int HandleCommands(const Glib::RefPtr<Gio::ApplicationCommandLine> &cmds, PageManager *pageManager)
 {
-    printf("running??\n");
 
     int    argc;
     char **argv = cmds->get_arguments(argc);

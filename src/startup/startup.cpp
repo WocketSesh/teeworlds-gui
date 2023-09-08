@@ -10,7 +10,6 @@
 
 PageManager *setupPageManager(const char *defaultPage, Gtk::Window *window)
 {
-    printf("starting up\n");
     PageManager *pageManager = new PageManager(window);
 
     // This needs to be done first for pages that may depend on setting information

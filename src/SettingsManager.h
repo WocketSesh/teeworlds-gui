@@ -1,7 +1,7 @@
 #ifndef SETTINGS_MANAGER_H
 #define SETTINGS_MANAGER_H
 
-#include "ServerPage.h"
+#include "ServerStruct.h"
 #include <string>
 #include <vector>
 class SettingsManager
@@ -11,6 +11,7 @@ class SettingsManager
     void Init(std::string filePath);
     bool AddFriend(std::string name);
     bool RemoveFriend(std::string name);
+    bool IsFavourite(std::string address);
     bool WriteFile();
     int  IsFriend(std::string name); // Returns the index of friend in  the vector, -1 means not friend
 
@@ -24,7 +25,8 @@ class SettingsManager
             std::string              selectedAddress;
             std::string              selectedUser;
             std::string              serverQuery;
-            ServerPage::SortType     sortType;
+            Server::SortType sortType; // This creates a circular dependancy since Server::CalculateFilterType takes
+                                       // SettingsManager as a param
         } serverSettings;
     } m_Data;
 

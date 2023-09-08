@@ -6,7 +6,6 @@ const int PAGES = 4;
 #include "BasePage.h"
 #include "HttpManager.h"
 #include "MainPage.h"
-#include "ServerPage.h"
 #include "SettingsManager.h"
 #include "gtkmm/cssprovider.h"
 #include "gtkmm/window.h"

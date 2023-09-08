@@ -43,12 +43,10 @@ void HttpManager::GetClientInfoFromName(const char *name, SoupSession *session, 
         soup_message_new(SOUP_METHOD_GET, fmt::format("http://ddnet.org/players/?json2={}", name).c_str());
 
     soup_session_send_async(session, message, G_PRIORITY_DEFAULT, NULL, &HttpManager::GotClient, data);
-    printf("sent request\n");
 };
 
 void HttpManager::GotClient(GObject *source, GAsyncResult *result, gpointer userData)
 {
-    printf("starting json parse\n");
     ClientRequestData *data = static_cast<ClientRequestData *>(userData);
 
     GError       *error  = NULL;
@@ -367,7 +365,6 @@ std::vector<MapInfo> HttpManager::JsonToMapStruct(JsonObject *object)
 
     for (iter = maps; iter != NULL; iter = iter->next)
     {
-        printf("%d\n", i);
         const gchar *key = (const gchar *)iter->data;
 
         JsonObject *mapInfoObj = json_object_get_object_member(object, key);
@@ -463,7 +460,8 @@ void HttpManager::GotServers(GObject *source, GAsyncResult *result, gpointer use
         currStruct->info = new ServerInfo;
 
         currStruct->info->max_players = json_object_get_int_member(info, "max_players");
-        currStruct->info->name        = json_object_get_string_member(info, "name");
+        currStruct->info->name        = json_object_get_string_member_with_default(info, "name", "undefined");
+        currStruct->info->game_type   = json_object_get_string_member_with_default(info, "game_type", "none");
 
         for (int j = 0; j < json_array_get_length(clientsArr); j++)
         {
@@ -480,7 +478,7 @@ void HttpManager::GotServers(GObject *source, GAsyncResult *result, gpointer use
 
         JsonObject *map = json_object_get_object_member(info, "map");
 
-        currStruct->info->map.name = json_object_get_string_member(map, "name");
+        currStruct->info->map.name = json_object_get_string_member_with_default(map, "name", "undefined");
 
         servers.push_back(currStruct);
 
