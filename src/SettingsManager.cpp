@@ -33,6 +33,33 @@ bool SettingsManager::IsFavourite(std::string address)
     return false;
 }
 
+bool SettingsManager::AddFavourite(std::string address)
+{
+    if (IsFavourite(address))
+        return false;
+
+    m_Data.serverSettings.favouriteServers.push_back(address);
+
+    return true;
+}
+
+// Maybe make IsFavourite return index like IsFriend to make this easier?
+bool SettingsManager::RemoveFavourite(std::string address)
+{
+    if (!IsFavourite(address))
+        return false;
+
+    for (int i = 0; i < m_Data.serverSettings.favouriteServers.size(); i++)
+    {
+        if (m_Data.serverSettings.favouriteServers[i] == address)
+        {
+            m_Data.serverSettings.favouriteServers.erase(m_Data.serverSettings.favouriteServers.begin() + i);
+        }
+    }
+
+    return true;
+}
+
 void SettingsManager::Init(std::string filePath)
 {
 
@@ -79,6 +106,11 @@ void SettingsManager::Init(std::string filePath)
         else if (line.substr(0, strlen("server_query")) == "server_query")
         {
             m_Data.serverSettings.serverQuery = line.substr(strlen("server_query") + 1, line.length() - 1);
+        }
+        else if (line.substr(0, strlen("favourite_server")) == "favourite_server")
+        {
+            m_Data.serverSettings.favouriteServers.push_back(
+                line.substr(strlen("favourite_server") + 1, line.length() - 1));
         }
     }
 

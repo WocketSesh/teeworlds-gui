@@ -1,6 +1,7 @@
 #ifndef SERVER_STRUCT_H
 #define SERVER_STRUCT_H
 
+#include "BasePage.h"
 #include "gtkmm/label.h"
 #include "gtkmm/listboxrow.h"
 #include "json-glib/json-glib.h"
@@ -19,6 +20,8 @@ class ServerPageBoxRow : public Gtk::ListBoxRow
                // Since sorting will modify its actual index unlike filtering
     Gtk::Label *serverNameLabel;
     Gtk::Label *mapNameLabel;
+    Gtk::Label *playerCountLabel;
+    Gtk::Label *glyphLabel;
 };
 
 // May just change these to structs, maybe not
@@ -77,10 +80,12 @@ class Server
     bool ShouldShow(std::string strFilter = "", ServerFilterTypes filterType = ALL);
     void CalculateFilterType(SettingsManager *settingsManager);
     void CalculateFriendCount(SettingsManager &settingsManager);
+    // shit solution but until i move AdjustTextFit somewhere else or some shit idk
+    void SetupText(BasePage &page);
 
-    std::vector<const char *> addresses;
-    const char               *location;
-    ServerInfo               *info;
+    std::vector<const char *> m_Addresses;
+    const char               *m_Location;
+    ServerInfo               *m_Info;
 
     ServerPageBoxRow *row;
 };

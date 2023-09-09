@@ -453,15 +453,15 @@ void HttpManager::GotServers(GObject *source, GAsyncResult *result, gpointer use
 
         for (int i = 0; i < json_array_get_length(addresses); i++)
         {
-            currStruct->addresses.push_back(json_array_get_string_element(addresses, i));
+            currStruct->m_Addresses.push_back(json_array_get_string_element(addresses, i));
         }
-        currStruct->location = json_object_get_string_member(curr, "location");
+        currStruct->m_Location = json_object_get_string_member(curr, "location");
 
-        currStruct->info = new ServerInfo;
+        currStruct->m_Info = new ServerInfo;
 
-        currStruct->info->max_players = json_object_get_int_member(info, "max_players");
-        currStruct->info->name        = json_object_get_string_member_with_default(info, "name", "undefined");
-        currStruct->info->game_type   = json_object_get_string_member_with_default(info, "game_type", "none");
+        currStruct->m_Info->max_players = json_object_get_int_member(info, "max_players");
+        currStruct->m_Info->name        = json_object_get_string_member_with_default(info, "name", "undefined");
+        currStruct->m_Info->game_type   = json_object_get_string_member_with_default(info, "game_type", "none");
 
         for (int j = 0; j < json_array_get_length(clientsArr); j++)
         {
@@ -473,12 +473,12 @@ void HttpManager::GotServers(GObject *source, GAsyncResult *result, gpointer use
             clientPtr->clan  = json_object_get_string_member_with_default(currClient, "clan", "undefined");
             clientPtr->score = json_object_get_int_member_with_default(currClient, "score", -1);
 
-            currStruct->info->clients.push_back(clientPtr);
+            currStruct->m_Info->clients.push_back(clientPtr);
         }
 
         JsonObject *map = json_object_get_object_member(info, "map");
 
-        currStruct->info->map.name = json_object_get_string_member_with_default(map, "name", "undefined");
+        currStruct->m_Info->map.name = json_object_get_string_member_with_default(map, "name", "undefined");
 
         servers.push_back(currStruct);
 

@@ -12,6 +12,8 @@ class SettingsManager
     bool AddFriend(std::string name);
     bool RemoveFriend(std::string name);
     bool IsFavourite(std::string address);
+    bool AddFavourite(std::string address);
+    bool RemoveFavourite(std::string address);
     bool WriteFile();
     int  IsFriend(std::string name); // Returns the index of friend in  the vector, -1 means not friend
 

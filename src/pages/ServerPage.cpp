@@ -91,6 +91,7 @@ void ServerPage::Reset()
 
     m_FirstOpened = true;
 
+    m_FavouriteServer.set_label("");
     if (m_ViewClientConnection.connected())
     {
         m_ViewClientConnection.disconnect();
@@ -106,11 +107,11 @@ void ServerPage::Reset()
 
     for (int i = 0; i < m_Servers.size(); i++)
     {
-        for (int c = 0; c < m_Servers[i]->info->clients.size(); c++)
+        for (int c = 0; c < m_Servers[i]->m_Info->clients.size(); c++)
         {
-            delete m_Servers[i]->info->clients[c];
+            delete m_Servers[i]->m_Info->clients[c];
         }
-        m_Servers[i]->info->clients.clear();
+        m_Servers[i]->m_Info->clients.clear();
         delete m_Servers[i];
     }
 
@@ -128,42 +129,6 @@ void ServerPage::Reset()
     m_SelectedServerName.set_label(AdjustTextFit("Selected: None", 233));
 }
 
-// This may not be the best way, but the inbuilt methods were aids to use??
-// Also this is not that much slower so its fine for now
-std::string ServerPage::AdjustTextFit(const char *initial_text, int size)
-{
-    auto        layout = Pango::Layout::create(get_pango_context());
-    std::string text   = initial_text;
-    layout->set_text(text);
-
-    int width, height;
-    layout->get_pixel_size(width, height);
-
-    if (width > size)
-    {
-        while (width > size - 3 && text.size() > 1)
-        {
-            text.pop_back();
-            layout->set_text(text);
-            layout->get_pixel_size(width, height);
-        }
-        text += "...";
-    }
-    else if (width < size)
-    {
-        while (width < size)
-        {
-            text += " ";
-            layout->set_text(text);
-            layout->get_pixel_size(width, height);
-        }
-
-        text.resize(text.size() - (width - size));
-    }
-
-    return text;
-}
-
 void ServerPage::ServerListSelect(Gtk::ListBoxRow *r)
 {
     // Select is triggered on reset, im not quite sure why but it does
@@ -175,8 +140,10 @@ void ServerPage::ServerListSelect(Gtk::ListBoxRow *r)
     Server           *server = ServerFromRow(row);
 
     if (row == nullptr || server == nullptr ||
-        (strcmp(m_SelectedServerIndex, server->addresses[0]) == 0) && !m_FirstOpened)
+        (strcmp(m_SelectedServerIndex, server->m_Addresses[0]) == 0) && !m_FirstOpened)
         return;
+
+    m_FavouriteServer.set_label(server->m_Favourite ? "Unfavourite Server" : "Favourite Server");
 
     m_FirstOpened = false;
 
@@ -184,18 +151,18 @@ void ServerPage::ServerListSelect(Gtk::ListBoxRow *r)
     m_SelectedClientIndex = "";
     m_SelectedClientPtr   = nullptr;
 
-    if (strcmp(m_SelectedServerIndex, server->addresses[0]) != 0)
+    if (strcmp(m_SelectedServerIndex, server->m_Addresses[0]) != 0)
         m_SelectedServerIndex = "";
 
-    m_SelectedServerIndex = server->addresses[0];
+    m_SelectedServerIndex = server->m_Addresses[0];
 
     // TODO: add an overload to allow it take in a std::string as well
     m_SelectedServerName.set_label(
-        AdjustTextFit(fmt::format("Selected: {}", m_SelectedServerPtr->info->name).c_str(), 233));
+        AdjustTextFit(fmt::format("Selected: {}", m_SelectedServerPtr->m_Info->name).c_str(), 233));
 
     ClearServerClientList();
 
-    std::vector<Client *> clients = m_SelectedServerPtr->info->clients;
+    std::vector<Client *> clients = m_SelectedServerPtr->m_Info->clients;
 
     for (int i = 0; i < clients.size(); i++)
     {
@@ -294,6 +261,25 @@ void ServerPage::SetupMain()
     m_SelectedClientView.set_label("View Selected User");
     m_SelectedClientView.signal_clicked().connect(sigc::mem_fun(*this, &ServerPage::ViewClientClicked));
     m_SelectedServer.pack_start(m_SelectedClientView, Gtk::PACK_SHRINK);
+
+    m_FavouriteServer.set_label("");
+    m_FavouriteServer.signal_clicked().connect([&] {
+        if (m_SelectedServerPtr == nullptr)
+            return;
+
+        if (!m_SelectedServerPtr->m_Favourite)
+            m_PageManager->m_Settings->AddFavourite(m_SelectedServerPtr->m_Addresses.at(0));
+        else
+            m_PageManager->m_Settings->RemoveFavourite(m_SelectedServerPtr->m_Addresses.at(0));
+
+        m_SelectedServerPtr->m_Favourite = !m_SelectedServerPtr->m_Favourite;
+
+        m_FavouriteServer.set_label(m_SelectedServerPtr->m_Favourite ? "Unfavourite Server" : "Favourite Server");
+
+        m_SelectedServerPtr->SetupText(*this);
+    });
+
+    m_SelectedServer.pack_start(m_FavouriteServer, Gtk::PACK_SHRINK);
 
     m_SelectedServer.show_all();
 
@@ -406,8 +392,9 @@ bool ServerPage::FilterServerList(Gtk::ListBoxRow *row)
     if (casted == nullptr)
         return false;
 
-    return casted->serverNameLabel->get_text().find(m_SearchQuery.get_text()) != std::string::npos ||
-           casted->mapNameLabel->get_text().find(m_SearchQuery.get_text()) != std::string::npos;
+    // TODO: havnet actually implemented changing filter type
+    return casted == nullptr ? false
+                             : ServerFromRow(row)->ShouldShow(m_SearchQuery.get_text(), Server::ServerFilterTypes::ALL);
 }
 
 bool ServerPage::SortServerList(Gtk::ListBoxRow *row1, Gtk::ListBoxRow *row2)
@@ -427,9 +414,9 @@ bool ServerPage::SortServerList(Gtk::ListBoxRow *row1, Gtk::ListBoxRow *row2)
     case Server::SortType::NONE:
         return false;
     case Server::SortType::PLAYERS_ASCENDING:
-        return s1->info->clients.size() > s2->info->clients.size();
+        return s1->m_Info->clients.size() > s2->m_Info->clients.size();
     case Server::SortType::PLAYERS_DESCENDING:
-        return s2->info->clients.size() > s1->info->clients.size();
+        return s2->m_Info->clients.size() > s1->m_Info->clients.size();
     }
 }
 
@@ -454,7 +441,7 @@ void ServerPage::ConnectServerClicked()
     }
 
     Glib::Threads::Thread::create([=]() {
-        const char *address = m_SelectedServerPtr->addresses[0];
+        const char *address = m_SelectedServerPtr->m_Addresses[0];
 
         std::string command = fmt::format("ez st \"connect {}\"", address);
 
@@ -550,36 +537,27 @@ void ServerPage::PopulateMain()
         box->set_orientation(Gtk::ORIENTATION_HORIZONTAL);
         box->show();
 
-        Gtk::Label *serverNameLabel = Gtk::make_managed<Gtk::Label>(AdjustTextFit(curr->info->name, 233));
-        serverNameLabel->set_xalign(0.0);
+        row->serverNameLabel = CreateAndSetLabel("", Gtk::ALIGN_START);
+        row->serverNameLabel->set_size_request(233, -1);
+        box->pack_start(*row->serverNameLabel, Gtk::PACK_EXPAND_WIDGET);
 
-        box->pack_start(*serverNameLabel, Gtk::PACK_EXPAND_WIDGET);
-        row->serverNameLabel = serverNameLabel;
+        row->mapNameLabel = CreateAndSetLabel("", Gtk::ALIGN_START);
+        row->mapNameLabel->set_size_request(100, -1);
+        box->pack_start(*row->mapNameLabel, Gtk::PACK_EXPAND_WIDGET);
 
-        Gtk::Label *mapNameLabel = Gtk::make_managed<Gtk::Label>(AdjustTextFit(curr->info->map.name, 100));
-        mapNameLabel->set_xalign(0.0);
+        row->playerCountLabel = CreateAndSetLabel("", Gtk::ALIGN_START);
+        row->playerCountLabel->set_size_request(50, -1);
+        box->pack_start(*row->playerCountLabel, Gtk::PACK_EXPAND_WIDGET);
 
-        box->pack_start(*mapNameLabel, Gtk::PACK_EXPAND_WIDGET);
-        row->mapNameLabel = mapNameLabel;
-
-        Gtk::Label *playerCountLabel = Gtk::make_managed<Gtk::Label>(
-            AdjustTextFit(fmt::format("{}/{}", curr->info->clients.size(), curr->info->max_players).c_str(), 50)
-                .c_str());
-        playerCountLabel->set_xalign(0.0);
-
-        box->pack_start(*playerCountLabel, Gtk::PACK_EXPAND_WIDGET);
-
-        box->pack_start(*CreateAndSetLabel(
-            AdjustTextFit(fmt::format("{} {}", curr->m_Favourite ? "★" : " ",
-                                      curr->m_FriendCount > 0 ? "♥" + std::to_string(curr->m_FriendCount) : "")
-                              .c_str(),
-                          50)
-                .c_str(),
-            Gtk::ALIGN_START));
+        row->glyphLabel = CreateAndSetLabel("", Gtk::ALIGN_START);
+        row->glyphLabel->set_size_request(50, -1);
+        box->pack_start(*row->glyphLabel, Gtk::PACK_EXPAND_WIDGET);
 
         row->index = i;
 
         curr->row = row;
+
+        curr->SetupText(*this);
 
         row->add(*box);
         row->show_all();
@@ -591,7 +569,6 @@ void ServerPage::PopulateMain()
     m_ServerPageContainer.pack_start(m_ServerOuterContainer, Gtk::PACK_EXPAND_WIDGET);
     m_ServerPageContainer.show();
 
-    printf("populated servers\n");
     m_LoadingSpinner.stop();
 
     if (strcmp(m_SelectedServerIndex, "") != 0)
@@ -621,7 +598,7 @@ ServerPageBoxRow *ServerPage::ServerRowFromAddress(const char *address)
         if (m_Servers[i] == nullptr)
             continue;
 
-        if (strcmp(m_Servers[i]->addresses[0], address) == 0)
+        if (strcmp(m_Servers[i]->m_Addresses[0], address) == 0)
         {
             return m_Servers[i]->row;
         }
@@ -632,7 +609,7 @@ ServerPageBoxRow *ServerPage::ServerRowFromAddress(const char *address)
 
 ServerPageBoxRow *ServerPage::ClientRowFromName(const char *name)
 {
-    std::vector<Client *> clients = m_SelectedServerPtr->info->clients;
+    std::vector<Client *> clients = m_SelectedServerPtr->m_Info->clients;
 
     for (int i = 0; i < clients.size(); i++)
     {
@@ -657,15 +634,15 @@ Client *ServerPage::ClientFromRow(Gtk::ListBoxRow *row)
 
     ServerPageBoxRow *casted = dynamic_cast<ServerPageBoxRow *>(row);
 
-    if (casted != nullptr && casted->index < m_SelectedServerPtr->info->clients.size() &&
-        m_SelectedServerPtr->info->clients[casted->index]->row == row)
+    if (casted != nullptr && casted->index < m_SelectedServerPtr->m_Info->clients.size() &&
+        m_SelectedServerPtr->m_Info->clients[casted->index]->row == row)
     {
-        return m_SelectedServerPtr->info->clients[casted->index];
+        return m_SelectedServerPtr->m_Info->clients[casted->index];
     }
 
-    for (int i = 0; i < m_SelectedServerPtr->info->clients.size(); i++)
+    for (int i = 0; i < m_SelectedServerPtr->m_Info->clients.size(); i++)
     {
-        Client *curr = m_SelectedServerPtr->info->clients[i];
+        Client *curr = m_SelectedServerPtr->m_Info->clients[i];
 
         if (curr != nullptr && curr->row == row)
             return curr;

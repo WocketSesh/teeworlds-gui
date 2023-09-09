@@ -7,6 +7,7 @@
 #include "glibmm/optiongroup.h"
 #include "glibmm/ustring.h"
 #include "gtkmm/button.h"
+#include "gtkmm/settings.h"
 #include "pages/MainPage.h"
 #include "pages/PageManager.h"
 #include "startup/startup.h"
@@ -86,7 +87,8 @@ int main(int argc, char *argv[])
 
     auto app = Gtk::Application::create(argc, argv, "com.sesh.teeworlds", Gio::APPLICATION_HANDLES_COMMAND_LINE);
 
-    Gtk::Window  window;
+    Gtk::Window window;
+
     PageManager *pageManager = setupPageManager("main", &window);
 
     pageManager->m_App = app;

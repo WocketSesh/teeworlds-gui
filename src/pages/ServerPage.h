@@ -17,6 +17,7 @@
 #include "libsoup/soup-types.h"
 #include "libsoup/soup.h"
 #include "pango/pango-types.h"
+#include "pangomm/fontdescription.h"
 #include "sigc++/connection.h"
 #include <atomic>
 #include <memory>
@@ -64,6 +65,7 @@ class ServerPage : public BasePage
     Gtk::ScrolledWindow m_SelectedServerClientsScrolled; // PARENT:SELECTED
     Gtk::ListBox        m_SelectedServerClientsList;     // PARENT:SELECTED
     Gtk::Button         m_SelectedClientView;            // PARENT:SELECTED
+    Gtk::Button         m_FavouriteServer;               // PARENT:SELECTED
     Gtk::Box            m_ServerSettingsContainer;       // HORIZ PARENT:OUTER
     Gtk::Entry          m_SearchQuery;                   // PARENT:SETTINGS
     Gtk::Button         m_ToggleSort;                    // PARENT:SETTINGS
@@ -102,9 +104,6 @@ class ServerPage : public BasePage
     void        ClearServerList();
     void        ClearServerClientList();
     static void FinishedLoading(std::vector<Server *>, gpointer calleeClass);
-
-    // Util function probably move at some point#
-    std::string AdjustTextFit(const char *initial_text, int size);
 };
 
 #endif // SERVER_PAGE_H

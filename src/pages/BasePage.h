@@ -13,6 +13,10 @@ class BasePage : public Gtk::Box
     virtual bool ShowPage(Gtk::Window *window);
     virtual bool HidePage(Gtk::Window *window);
 
+    int m_ElipsisWidth;
+
+    std::string AdjustTextFit(const char *initial_text, int size);
+
     void SetName(const char *name);
 
     const char  *m_Name;
